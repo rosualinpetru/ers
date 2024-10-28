@@ -1,25 +1,26 @@
-# Range Search on Encrypted Multi-Attribute Data: Experiment Code
+# Range Search on Encrypted Multi-Attribute Data: Experiment Code (Extensions)
 
-This is the associated artifact for the paper "Range Search on Encrypted Multi-Attribute Data" by Francesca Falzon, Evangelia Anna Markatou, Zachary Espiritu, and Roberto Tamassia.
+This fork implements additional range search schemes for multi-attribute data.
+
+*The only contribution is contained in the **extensions** package!*
+
+* **ers**: The package contains schemes associated with the paper "Range Search on Encrypted Multi-Attribute Data" by Francesca Falzon, Evangelia Anna Markatou, Zachary Espiritu, and Roberto Tamassia.
+* **extensions**: Contains newly introduced schemes.
 
 **Important:** This repository implements several cryptographic primitives (used for research purposes) which should not be used in production.
 
 ## Dependencies 
 
-Our schemes assume prior installation of Python 3.9.0 or above which can be installed from [here](https://www.python.org/downloads/source/).
+Our schemes assume prior installation of Python 3.12.0 or above which can be installed from [here](https://www.python.org/downloads/source/).
 The `requirements.txt` file in the main directory contains a list of all the necessary dependencies for running our schemes and reproducing our experiments; these dependencies can be installed using the `pip3 install -r requirements.txt` command.
 
 ## Detailed Usage
 
 ### Benchmarking the schemes
 
-We implement the following schemes from our paper:
+We additionally implement the following schemes:
 
-* **Linear**: A scheme that achieves optimal storage at the expense of query bandwidth.
-* **Range-BRC**: A scheme based on the classic range tree data structure and which uses the best range cover (BRC) to minimize the number of search tokens issued while still ensuring that no false positives are returned.
-* **Quad-BRC**: A scheme based on the classic quadtree data structure together with the best range cover (BRC). This scheme offers smaller storage requirements compared to Range-BRC in exchange for a larger query bandwidth.
-* **Tdag-SRC**: A scheme that extends the Tdag-SRC scheme of Demertzis et al. (SIGMOD 2016) to higher dimensions. This acheives the smallest bandwidth, i.e. a single search token, at the expense of false positives, while achieveing the same asymptotic complexity of the range tree.
-* **Qdag-SRC**: A scheme that leverages a novel data structure called a quadtree-like DAG (QDAG). The QDAG is based on the quadtree but injects additional nodes in such a way that it minimizes the number of false positives when using the single range cover (SRC). It achieves the same asymptotic storage complexity as the Quad-BRC. 
+* **Hilbert**: A scheme that achieves optimal storage at the expense of query bandwidth.
 
 Each of our schemes can be tested on the following four datasets:
 
@@ -32,28 +33,20 @@ Each of our schemes can be tested on the following four datasets:
 You can execute our schemes on these datasets by executing the following command from the root directory of the repository:
 
 ```
-$ bash {spitz.sh, cali.sh, gowalla.sh, nh.sh} {linear, range_brc, quad_brc, tdag_src, qdag_src}
+$ bash {spitz.sh, cali.sh, gowalla.sh, nh.sh} {hilbert}
 ```
 
-For example, if you wish to reproduce our Range-BRC scheme experiments on the California data set, then you should run `$ bash cali.sh range_brc`. Each such command generates builds the index over the appropriate domain size and reports the resulting index size and setup time. Then it generates 100 queries and averages and reports the query response times and query sizes over these 100 queries.
-
-## Appendix
-
-### Our Environment
-
-The experiments in our paper were executed on Brown University's [Oscar](https://docs.ccv.brown.edu/oscar/) compute cluster. Oscar uses the [Slurm](https://slurm.schedmd.com/documentation.html) job scheduler for job submission. Each job consists of an experiment on a single scheme on a single dataset. To our knowledge, assigned cluster resources were exclusive to our jobs during the duration of our experiments (i.e. jobs were not preempted).
-
+For example, if you wish to reproduce our Hilbe scheme experiments on the California data set, then you should run `$ bash cali.sh range_brc`. Each such command generates builds the index over the appropriate domain size and reports the resulting index size and setup time. Then it generates 100 queries and averages and reports the query response times and query sizes over these 100 queries.
 
 ### License
 
 All code is provided as-is under the *Apache License 2.0*. See
 [`LICENSE`](./LICENSE) for full license text.
 
-Every source code file should be prefixed with a comment containing the following text:
+The source code from the `extensions` should be prefixed with a comment containing the following text:
 
 ```
-Copyright 2022 Zachary Espiritu and Evangelia Anna Markatou and
-               Francesca Falzon and Roberto Tamassia and William Schor
+Copyright 2024 Alin-Petru Rosu and Evangelia Anna Markatou
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
