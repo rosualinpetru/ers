@@ -25,8 +25,9 @@ from hilbertcurve.hilbertcurve import HilbertCurve
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.structures.point import Point
 from ers.structures.rect import Rect
+from extensions.experiments.error import fill_space_plaintext_mm
 from extensions.schemes.hilbert.hilbert import Hilbert
-from extensions.schemes.hilbert.interval_division import PerimeterTraversalDivision
+from extensions.schemes.hilbert.interval_division import PerimeterTraversalDivision, EmpiricalMergingDivision
 
 
 def random_plaintext_mm(number_of_files: int, rect: Rect, file_size: int) -> Dict[Point, List[bytes]]:
@@ -95,14 +96,17 @@ def plot_query(iterations: int, hc: HilbertCurve, space: Rect, query: Rect, plai
 
 
 def plot_program():
+    # PARAMS
+    INTERVAL_DIVISION = EmpiricalMergingDivision()
+
     # VARIABLES
     SEC_PARAM = 16
 
     MIN_X = 0  # inclusive
     MIN_Y = 0
 
-    MAX_X = 8  # exclusive
-    MAX_Y = 8
+    MAX_X = 16  # exclusive
+    MAX_Y = 16
 
     FILE_SIZE = 5
     NUMBER_OF_FILES = 50
@@ -112,7 +116,7 @@ def plot_program():
     space_end = Point(MAX_X - 1, MAX_Y - 1)
     space_rect = Rect(space_start, space_end)
 
-    plaintext_mm = random_plaintext_mm(NUMBER_OF_FILES, space_rect, FILE_SIZE)
+    plaintext_mm = fill_space_plaintext_mm(space_rect, FILE_SIZE)
 
     # HILBERT INIT
     hc = Hilbert(EMMEngine(MAX_X, MAX_Y))
@@ -129,7 +133,7 @@ def plot_program():
 
     query_rect = Rect(query_start, query_end)
 
-    search_tokens = hc.trapdoor(key, query_rect, PerimeterTraversalDivision())
+    search_tokens = hc.trapdoor(key, query_rect, INTERVAL_DIVISION)
     encrypted_results = hc.search(search_tokens)
     resolved_results = hc.resolve(key, encrypted_results)
 

@@ -65,3 +65,60 @@ class PerimeterTraversalDivision(IntervalDivision):
                     i = i + 1
             i = i + 1
         return ranges
+
+
+def _max_gap_indices(ranges):
+    max_gap = 0
+    max_index = None
+
+    for i in range(len(ranges) - 1):
+        gap = ranges[i + 1][0] - ranges[i][1]
+        if gap > max_gap:
+            max_gap = gap
+            max_index = i
+
+    return max_index
+
+
+class EmpiricalMergingDivision(IntervalDivision):
+    def __init__(self, iops_cost_param: int = 1):
+        self.__pt = PerimeterTraversalDivision()
+        self.__iops_cost_param = iops_cost_param
+
+    def divide(self, hc: HilbertCurve, rect: Rect) -> List[List[int]]:
+        ranges = self.__pt.divide(hc, rect)
+
+        width = rect.end.x - rect.start.x
+        height = rect.end.y - rect.start.y
+
+        threshold = self.__iops_cost_param * width * height
+
+        max_index = _max_gap_indices(ranges)
+        while max_index is not None and ranges[max_index+1][0] - ranges[max_index][1] <= threshold:
+            ranges[max_index] = [ranges[max_index][0], ranges[max_index+1][1]]
+            ranges.pop(max_index + 1)
+            max_index = _max_gap_indices(ranges)
+
+        return ranges
+
+
+class ScalingDivision(IntervalDivision):
+    def divide(self, hc: HilbertCurve, rect: Rect) -> List[List[int]]:
+        perimeter = _perimeter_points(rect)
+        hilbert_indices = sorted(list(map(lambda p: hc.distance_from_point([p.x, p.y]), perimeter)))
+        ranges = []
+        i = 0
+        while i < len(hilbert_indices):
+            start_range = hilbert_indices[i]
+            while True:
+                while i < len(hilbert_indices) - 1 and hilbert_indices[i + 1] == hilbert_indices[i] + 1:
+                    i = i + 1  # walk around perimeter
+                # point of turn
+                [x, y] = hc.point_from_distance(hilbert_indices[i] + 1)
+                if not rect.contains_point(Point(x, y)):  # if point is not in search space, close query
+                    ranges.append([start_range, hilbert_indices[i]])
+                    break
+                else:  # else, merge query and skip
+                    i = i + 1
+            i = i + 1
+        return ranges
