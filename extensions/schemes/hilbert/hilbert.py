@@ -1,21 +1,4 @@
-##
-## Copyright 2024 Alin-Petru Rosu and Evangelia Anna Markatou
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 import math
-from collections import defaultdict
 from typing import Dict, List, Set
 
 from hilbertcurve.hilbertcurve import HilbertCurve
@@ -24,28 +7,16 @@ from ers.schemes.common.emm import EMM
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.structures.point import Point
 from ers.structures.rect import Rect
-from extensions.schemes.hilbert.interval_division import IntervalDivision
 
 
-class Linear1D(EMM):
+class Hilbert(EMM):
     def __init__(self, emm_engine: EMMEngine):
         super().__init__(emm_engine)
         self.encrypted_db = None
 
-    def build_index(self, key: bytes, plaintext_mm: Dict[int, List[bytes]]):
-        modified_db = defaultdict(list)
-        for point, files in plaintext_mm.items():
-            modified_db[bytes(point)].extend(files)
-
-        self.encrypted_db = self.emm_engine.build_index(key, modified_db)
-
-    def trapdoor(self, key: bytes, lower: int, upper: int) -> Set[bytes]:
-        trapdoors = set()
-
-        for point in range(lower, upper + 1):
-            trapdoors.add(self.emm_engine.trapdoor(key, bytes(point)))
-
-        return trapdoors
+        self.edge_bits = math.ceil(math.log2(max(emm_engine.MAX_X, emm_engine.MAX_Y)))
+        self.dimension = 2
+        self.hc = HilbertCurve(self.edge_bits, self.dimension)
 
     def search(self, trapdoors: Set[bytes]) -> Set[bytes]:
         results = set()
@@ -58,34 +29,78 @@ class Linear1D(EMM):
 
         return results
 
+    def _hilbert_plaintext_mm(self, plaintext_mm: Dict[Point, List[bytes]]):
+        return {self.hc.distance_from_point([pt.x, pt.y]): plaintext_mm[pt] for pt in plaintext_mm.keys()}
 
-class Hilbert(EMM):
-    def __init__(self, emm_engine: EMMEngine):
-        super().__init__(emm_engine)
-        self.encrypted_db = None
+    def _hilbert_ranges(self, p1: Point, p2: Point, false_positive_tolerance_factor: float, downscale: bool) -> List[tuple[int, int]]:
+        hc = self.hc
+        reduced_edge_bits = 0
+        if downscale:
+            (reduced_edge_bits, p1, p2) = _hilbert_downscale(self.edge_bits, p1, p2)
+            hc = HilbertCurve(self.edge_bits - reduced_edge_bits, 2)
 
-        self.__linear = Linear1D(emm_engine)
+        perimeter_points = _perimeter_points(p1, p2)
+        hilbert_perimeter_indices = sorted([hc.distance_from_point([point.x, point.y]) for point in perimeter_points])
 
-        self.iterations = math.ceil(math.log2(max(emm_engine.MAX_X, emm_engine.MAX_Y)))
-        self.hc = HilbertCurve(self.iterations, 2)
+        false_positive_tolerance = _area(p1, p2) * false_positive_tolerance_factor
 
-    def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        hilbert_index_dict = {self.hc.distance_from_point([pt.x, pt.y]): plaintext_mm[pt] for pt in plaintext_mm.keys()}
-        self.__linear.build_index(key, hilbert_index_dict)
-        self.encrypted_db = self.__linear.encrypted_db
+        ranges = []
+        i = 0
+        while i < len(hilbert_perimeter_indices):
+            start_range = hilbert_perimeter_indices[i]
+            end_range = start_range
 
-    def trapdoor(self, key: bytes, rect: Rect, interval_division: IntervalDivision) -> Set[bytes]:
-        trapdoors = set()
+            while i + 1 < len(hilbert_perimeter_indices):  # Start a new range
+                if hilbert_perimeter_indices[i + 1] == hilbert_perimeter_indices[i] + 1:  # Check if the next index is contiguous
+                    end_range = hilbert_perimeter_indices[i + 1]
+                    i += 1
+                    continue
 
-        for r in interval_division.divide(self.hc, rect):
-            trapdoors = trapdoors.union(self.__linear.trapdoor(key, r[0], r[1]))
+                [x, y] = hc.point_from_distance(hilbert_perimeter_indices[i] + 1)  # Calculate the point at the next distance
 
-        return trapdoors
+                if not Rect(p1, p2).contains_point(Point(x, y)):  # If it's outside the rectangle, check tolerance
+                    if hilbert_perimeter_indices[i + 1] - hilbert_perimeter_indices[i] >= false_positive_tolerance:
+                        break  # Finalize the current range
+                    else:
+                        end_range = hilbert_perimeter_indices[i + 1]  # Include the point despite being outside
+                else:
+                    end_range = hilbert_perimeter_indices[i + 1]  # Point is inside, extend the range
 
-    def search(self, trapdoors: Set[bytes]) -> Set[bytes]:
-        if self.encrypted_db is None:
-            return set()
+                i += 1
 
-        return self.__linear.search(trapdoors)
+            ranges.append((start_range, end_range))  # Finalize and store the current range
+            i += 1
+
+        if downscale:
+            return _hilbert_upscale(reduced_edge_bits, ranges)
+
+        return ranges
 
 
+def _area(p1: Point, p2: Point) -> int:
+    width = p2.x - p1.x
+    height = p2.y - p1.y
+
+    return width * height
+
+
+def _perimeter_points(p1: Point, p2: Point) -> List[Point]:
+    perimeter_points = []
+    for x in range(p1.x, p2.x + 1):
+        perimeter_points.append(Point(x, p1.y))
+        perimeter_points.append(Point(x, p2.y))
+
+    for y in range(p1.y + 1, p2.y):
+        perimeter_points.append(Point(p1.x, y))
+        perimeter_points.append(Point(p2.x, y))
+
+    return perimeter_points
+
+
+# Currently, there is no downscaling performed
+def _hilbert_downscale(edge_bits: int, p1: Point, p2: Point) -> tuple[int, Point, Point]:
+    return 0, p1, p2
+
+
+def _hilbert_upscale(reduced_edge_bits: int, ranges: List[tuple[int, int]]) -> List[tuple[int, int]]:
+    return ranges

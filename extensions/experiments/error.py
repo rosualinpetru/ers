@@ -1,137 +1,107 @@
-##
-## Copyright 2024 Alin-Petru Rosu and Evangelia Anna Markatou
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 import multiprocessing
-import random
-import string
-import threading
 import time
-from typing import Dict, List
 
 import tqdm
+from matplotlib import pyplot as plt
 
 from ers.schemes.common.emm_engine import EMMEngine
+from ers.schemes.linear import Linear
+from ers.schemes.quad_brc import QuadBRC
+from ers.schemes.range_brc import RangeBRC
+from ers.schemes.tdag_src import TdagSRC
 from ers.structures.point import Point
-from ers.structures.rect import Rect
-from extensions.schemes.hilbert.hilbert import Hilbert
-from extensions.schemes.hilbert.interval_division import PerimeterTraversalDivision, MinMaxDivision
+from extensions.experiments.utils import fill_space_plaintext_mm, random_query_2d
+from extensions.schemes.hilbert.linear import LinearHilbert
+from extensions.schemes.hilbert.quad_brc import QuadBRCHilbert
+from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
+from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
 
 
-def fill_space_plaintext_mm(space: Rect, file_size: int) -> Dict[Point, List[bytes]]:
-    plaintext_mm = {}
-    for y in range(space.start.y, space.end.y):
-        for x in range(space.start.x, space.end.x):
-            k = Point(x, y)
-            c = ''.join(random.choices(string.ascii_lowercase, k=file_size)).encode('utf-8')
-            plaintext_mm.update({k: [c]})
-    return plaintext_mm
-
-
-def generate_all_queries(space: Rect) -> List[Rect]:
-    queries = []
-
-    for x1 in range(space.start.x, space.end.x):
-        for y1 in range(space.start.y, space.end.y):
-            for x2 in range(x1 + 1, space.end.x + 1):
-                for y2 in range(y1 + 1, space.end.y + 1):
-                    queries.append(Rect(Point(x1, y1), Point(x2, y2)))
-
-    return queries
-
-
-def analyse_performance(hc, key, space_rect, job_remaining, query_rect):
-    start = time.time()
-    search_tokens = hc.trapdoor(key, query_rect, PerimeterTraversalDivision())
-    encrypted_results = hc.search(search_tokens)
-    true_positive_results = hc.resolve(key, encrypted_results)
-    end = time.time()
-
-    tp_time = end - start
+def analyse_performance(hc, hc_key, base, base_key, query_start, query_end):
+    tp = set()
+    for y in range(query_start.y, query_end.y + 1):
+        for x in range(query_start.x, query_end.x + 1):
+            tp.add(f'({x}, {y})'.encode('utf-8'))
 
     start = time.time()
-    search_tokens = hc.trapdoor(key, query_rect, MinMaxDivision())
-    encrypted_results = hc.search(search_tokens)
-    true_false_positive_results = hc.resolve(key, encrypted_results)
+    base_results = base.search(base.trapdoor(base_key, query_start, query_end))
     end = time.time()
 
-    p_time = end - start
+    base_time = end - start
 
-    job_remaining.value += 1
+    start = time.time()
+    hc_results = hc.search(hc.trapdoor(hc_key, query_start, query_end))
+    end = time.time()
 
-    return tp_time, p_time, len(true_positive_results) * 1.0 / len(true_false_positive_results)
+    hc_time = end - start
 
-
-def value_printer(shared_value, out_of, stop_event):
-    while not stop_event.is_set():
-        print(f"{time.time()} - Query progress: {shared_value.value}/{out_of}")
-        time.sleep(3)
+    return base_time, hc_time, len(tp) / len(base_results),  len(tp) / len(hc_results)
 
 
-def compute_error():
+def compute_error(hilbert_scheme, base_scheme, name):
     # VARIABLES
     SEC_PARAM = 16
     MIN_X = 0  # inclusive
     MIN_Y = 0
-    FILE_SIZE = 1000
-    MAX_SPACE_SIZE = 3
+    MAX_SPACE_SIZE = 5
+    RANDOM_EXPERIMENT_COUNT = 1000
 
-    results = []
+    space_sizes = []
+    hc_avg_times = []
+    base_avg_times = []
 
-    with multiprocessing.Manager() as manager:
-        for i in tqdm.tqdm(range(1, MAX_SPACE_SIZE + 1), desc="Space Loop Progress"):
-            MAX_X = 2 ** i
-            MAX_Y = 2 ** i
+    for i in tqdm.tqdm(range(1, MAX_SPACE_SIZE + 1), desc=f"Space Size {name}"):
+        results = []
 
-            space_start = Point(MIN_X, MIN_Y)
-            space_end = Point(MAX_X - 1, MAX_Y - 1)
-            space_rect = Rect(space_start, space_end)
+        MAX_X = 2 ** i
+        MAX_Y = 2 ** i
 
-            plaintext_mm = fill_space_plaintext_mm(space_rect, FILE_SIZE)
+        space_start = Point(MIN_X, MIN_Y)
+        space_end = Point(MAX_X - 1, MAX_Y - 1)
 
-            # HILBERT INIT
-            hc = Hilbert(EMMEngine(MAX_X, MAX_Y))
-            key = hc.setup(SEC_PARAM)
-            hc.build_index(key, plaintext_mm)
+        plaintext_mm = fill_space_plaintext_mm(space_start, space_end)
 
-            queries = generate_all_queries(space_rect)
+        # HILBERT INIT
+        hc = hilbert_scheme(EMMEngine(MAX_X, MAX_Y))
+        hc_key = hc.setup(SEC_PARAM)
+        hc.build_index(hc_key, plaintext_mm)
 
-            # Use multiprocessing.Manager to create a shared job_remaining value
-            job_remaining = manager.Value('i', 0)
-            args = [(hc, key, space_rect, job_remaining, query) for query in queries]
+        base = base_scheme(EMMEngine(MAX_X, MAX_Y))
+        base_key = base.setup(SEC_PARAM)
+        base.build_index(base_key, plaintext_mm)
 
-            # Start the daemon thread for printing progress
-            stop_event = threading.Event()
-            printer_thread = threading.Thread(target=value_printer, args=(job_remaining, len(queries), stop_event),
-                                              daemon=True)
-            printer_thread.start()
+        queries = [random_query_2d(space_start, space_end) for _ in range(0, RANDOM_EXPERIMENT_COUNT)]
 
-            # Use multiprocessing.Pool for processing
-            with multiprocessing.Pool() as pool:
-                results.extend(pool.starmap(analyse_performance, args))
+        args = [(hc, hc_key, base, base_key, start, end) for (start, end) in queries]
 
-            # Stop the daemon thread after pool processing is done
-            stop_event.set()
-            printer_thread.join()
+        with multiprocessing.Pool(1) as pool:
+            results.extend(pool.starmap(analyse_performance, args))
 
-    tp_times, p_times, precisions = zip(*results)
+        base_times, hc_times, base_precisions, hc_precisions  = zip(*results)
+        space_sizes.append(i)
+        base_avg_times.append(sum(base_times) / len(base_times))
+        hc_avg_times.append(sum(hc_times) / len(hc_times))
 
-    print(f"Aggregated TP time: {sum(tp_times) / len(tp_times)}")
-    print(f"Aggregated P time: {sum(p_times) / len(p_times)}")
-    print(f"Aggregated precisions: {sum(precisions) / len(precisions)}")
+        print(f"{name} - Space size: {i}")
+        print(f"Base precision: {sum(base_precisions) / len(base_precisions)}")
+        print(f"Hilbert precision: {sum(hc_precisions) / len(hc_precisions)}")
+
+    plt.figure()
+    plt.plot(space_sizes, base_avg_times, label=f"{name}")
+    # Plot the cosine function
+    plt.plot(space_sizes, hc_avg_times, label=f"{name}Hilbert", color="orange")
+    # Add title and labels
+    plt.title(f"{name}")
+    plt.xlabel("Space Size (2 ** x)")
+    plt.ylabel("Average time")
+
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 if __name__ == "__main__":
-    compute_error()
+    # compute_error(Linear, LinearHilbert, "Linear")
+    # compute_error(RangeBRC, RangeBRCHilbert, "RangeBRC")
+    # compute_error(QuadBRC, QuadBRCHilbert, "QuadBRC")
+    compute_error(TdagSRC, TdagSRCHilbert, "TdagSRC")
