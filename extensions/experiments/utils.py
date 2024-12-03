@@ -2,6 +2,7 @@ import random
 from typing import Dict, List
 
 from ers.structures.point import Point
+from ers.util.serialization import ObjectToBytes
 
 
 def random_plaintext_mm(number_of_files: int, space_start: Point, space_end: Point) -> Dict[Point, List[bytes]]:
@@ -10,7 +11,7 @@ def random_plaintext_mm(number_of_files: int, space_start: Point, space_end: Poi
         x = random.randint(space_start.x, space_end.x)
         y = random.randint(space_start.y, space_end.y)
         k = Point(x, y)
-        c = f'({x}, {y})'.encode('utf-8')
+        c = ObjectToBytes(f'({x}, {y})')
 
         if k in plaintext_mm:
             l = plaintext_mm.get(k)
@@ -27,7 +28,7 @@ def fill_space_plaintext_mm(space_start: Point, space_end: Point) -> Dict[Point,
     for y in range(space_start.y, space_end.y + 1):
         for x in range(space_start.x, space_end.x + 1):
             k = Point(x, y)
-            c = f'({x}, {y})'.encode('utf-8')
+            c = ObjectToBytes(f'({x}, {y})')
             plaintext_mm.update({k: [c]})
     return plaintext_mm
 

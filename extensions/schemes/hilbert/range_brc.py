@@ -32,8 +32,8 @@ class RangeBRCHilbert(Hilbert):
 
         self.encrypted_db = self.emm_engine.build_index(key, modified_db)
 
-    def trapdoor(self, key: bytes, p1: Point, p2: Point, false_positive_tolerance_factor: float = 0, downscale: bool = False) -> Set[bytes]:
-        hilbert_ranges = self._hilbert_ranges(p1, p2, false_positive_tolerance_factor, downscale)
+    def trapdoor(self, key: bytes, p1: Point, p2: Point, segment_gap_tolerance: float = 0, downscale_percentage: int = 0) -> Set[bytes]:
+        hilbert_ranges = self._hilbert_ranges(p1, p2, segment_gap_tolerance, downscale_percentage)
 
         trapdoors = set()
 

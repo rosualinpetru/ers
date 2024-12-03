@@ -6,36 +6,34 @@ from matplotlib import pyplot as plt
 
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.linear import Linear
-from ers.schemes.quad_brc import QuadBRC
 from ers.schemes.range_brc import RangeBRC
 from ers.schemes.tdag_src import TdagSRC
 from ers.structures.point import Point
 from extensions.experiments.utils import fill_space_plaintext_mm, random_query_2d
 from extensions.schemes.hilbert.linear import LinearHilbert
-from extensions.schemes.hilbert.quad_brc import QuadBRCHilbert
 from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
 from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
 
 
 def analyse_performance(hc, hc_key, base, base_key, query_start, query_end):
-    tp = set()
-    for y in range(query_start.y, query_end.y + 1):
-        for x in range(query_start.x, query_end.x + 1):
-            tp.add(f'({x}, {y})'.encode('utf-8'))
+    tp = (query_end.x - query_start.x + 1) * (query_end.y - query_start.y + 1)
 
-    start = time.time()
-    base_results = base.search(base.trapdoor(base_key, query_start, query_end))
-    end = time.time()
-
-    base_time = end - start
-
-    start = time.time()
-    hc_results = hc.search(hc.trapdoor(hc_key, query_start, query_end))
-    end = time.time()
+    start = time.perf_counter()
+    hc_results = hc.search(hc.trapdoor(hc_key, query_start, query_end, 50))
+    end = time.perf_counter()
+    tp_fp_hc = len(hc_results)
 
     hc_time = end - start
 
-    return base_time, hc_time, len(tp) / len(base_results),  len(tp) / len(hc_results)
+
+    start = time.perf_counter()
+    base_results = base.search(base.trapdoor(base_key, query_start, query_end))
+    end = time.perf_counter()
+    tp_fp_base = len(base_results)
+
+    base_time = end - start
+
+    return base_time, hc_time, tp / tp_fp_base if tp_fp_base != 0 else 0,  tp / tp_fp_hc if tp_fp_hc != 0 else 0
 
 
 def compute_error(hilbert_scheme, base_scheme, name):
@@ -43,8 +41,8 @@ def compute_error(hilbert_scheme, base_scheme, name):
     SEC_PARAM = 16
     MIN_X = 0  # inclusive
     MIN_Y = 0
-    MAX_SPACE_SIZE = 5
-    RANDOM_EXPERIMENT_COUNT = 1000
+    MAX_SPACE_SIZE = 7
+    RANDOM_EXPERIMENT_COUNT = 16
 
     space_sizes = []
     hc_avg_times = []
@@ -74,7 +72,7 @@ def compute_error(hilbert_scheme, base_scheme, name):
 
         args = [(hc, hc_key, base, base_key, start, end) for (start, end) in queries]
 
-        with multiprocessing.Pool(1) as pool:
+        with multiprocessing.Pool(16) as pool:
             results.extend(pool.starmap(analyse_performance, args))
 
         base_times, hc_times, base_precisions, hc_precisions  = zip(*results)
@@ -101,7 +99,6 @@ def compute_error(hilbert_scheme, base_scheme, name):
 
 
 if __name__ == "__main__":
-    # compute_error(Linear, LinearHilbert, "Linear")
-    # compute_error(RangeBRC, RangeBRCHilbert, "RangeBRC")
-    # compute_error(QuadBRC, QuadBRCHilbert, "QuadBRC")
-    compute_error(TdagSRC, TdagSRCHilbert, "TdagSRC")
+    # compute_error(LinearHilbert, Linear, "Linear")
+    # compute_error(RangeBRCHilbert, RangeBRC, "RangeBRC")
+    compute_error(TdagSRCHilbert, TdagSRC, "TdagSRC")

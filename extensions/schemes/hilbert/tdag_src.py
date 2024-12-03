@@ -32,13 +32,11 @@ class TdagSRCHilbert(Hilbert):
 
         self.encrypted_db = self.emm_engine.build_index(key, modified_db)
 
-    def trapdoor(self, key: bytes, p1: Point, p2: Point, downscale: bool = False) -> Set[bytes]:
+    def trapdoor(self, key: bytes, p1: Point, p2: Point, segment_gap_tolerance: float = 0, downscale_percentage: int = 0) -> Set[bytes]:
         trapdoors = set()
-        hilbert_range = self._hilbert_ranges(p1, p2, self.emm_engine.MAX_X * self.emm_engine.MAX_Y, downscale)
-        cover = self.tdag.get_single_range_cover((hilbert_range[0][0], hilbert_range[0][1]))
+        hilbert_range = self._hilbert_range_src(p1, p2, downscale_percentage)
+        cover = self.tdag.get_single_range_cover((hilbert_range[0], hilbert_range[1]))
         trapdoors.add(self.emm_engine.trapdoor(key, ObjectToBytes(cover)))
-        print(hilbert_range)
-        print(cover)
         return trapdoors
 
 def _descend_tree(val: int, r: tuple[int, int]) -> List[tuple[int, int]]:
