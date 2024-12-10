@@ -16,15 +16,15 @@ if __name__ == "__main__":
     # VARIABLES
     SEC_PARAM = 16
 
-    SCHEME = TdagSRCHilbert
+    SCHEME = LinearHilbert
     MERGE_GAP_TOLERANCE = 1
-    SCALING_PERCENTAGE = 20
+    SCALING_PERCENTAGE = 0
 
     MIN_X = 0  # inclusive
     MIN_Y = 0
 
-    MAX_X = 32  # exclusive
-    MAX_Y = 32
+    MAX_X = 8  # exclusive
+    MAX_Y = 8
 
     # PLAINTEXT
     space_start = Point(MIN_X, MIN_Y)
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     num_points = 2 ** (hc.dimension * hc.edge_bits)
     hilbert_points = np.array([hc.hc.point_from_distance(i) for i in range(num_points)])
 
-    plt.figure(figsize=(32, 32))
+    plt.figure(figsize=(256, 256))
 
     def point_color(p: Point):
         q = Rect(query_start, Point(query_end.x + 1, query_end.y + 1))
@@ -70,8 +70,8 @@ if __name__ == "__main__":
         color = point_color(p)
 
         plt.scatter(p.x, p.y, color=color)
-        plt.text(p.x + 0.1, p.y + 0.1, '\n'.join([BytesToObject(s).__str__() for s in plaintext_mm[p]]), fontsize=8, color=color)
-        plt.text(x - 0.2, y - 0.2, str(idx), fontsize=6, color=color)
+        plt.text(p.x + 0.1, p.y + 0.1, '\n'.join([BytesToObject(s).__str__() for s in plaintext_mm[p]]), fontsize=14, color=color)
+        plt.text(x - 0.2, y - 0.2, str(idx), fontsize=14, color=color)
 
         if idx == num_points - 1:
             continue
@@ -108,6 +108,5 @@ if __name__ == "__main__":
     plt.title(f"Hilbert Curve")
     plt.xlabel("X")
     plt.ylabel("Y")
-    plt.legend()
-    plt.grid(True)
+    plt.grid(False)
     plt.show()

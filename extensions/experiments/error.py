@@ -14,20 +14,20 @@ from extensions.schemes.hilbert.linear import LinearHilbert
 from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
 from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
 
-
 def analyse_performance(hc, hc_key, base, base_key, query_start, query_end):
     tp = (query_end.x - query_start.x + 1) * (query_end.y - query_start.y + 1)
 
     start = time.perf_counter()
-    hc_results = hc.search(hc.trapdoor(hc_key, query_start, query_end, 50))
+    hc_trapdoors = hc.trapdoor(hc_key, query_start, query_end, 1)
+    hc_results = hc.search(hc_trapdoors)
     end = time.perf_counter()
     tp_fp_hc = len(hc_results)
 
     hc_time = end - start
 
-
     start = time.perf_counter()
-    base_results = base.search(base.trapdoor(base_key, query_start, query_end))
+    base_trapdoors = base.trapdoor(base_key, query_start, query_end)
+    base_results = base.search(base_trapdoors)
     end = time.perf_counter()
     tp_fp_base = len(base_results)
 
@@ -42,13 +42,13 @@ def compute_error(hilbert_scheme, base_scheme, name):
     MIN_X = 0  # inclusive
     MIN_Y = 0
     MAX_SPACE_SIZE = 7
-    RANDOM_EXPERIMENT_COUNT = 16
+    RANDOM_EXPERIMENT_COUNT = 25
 
     space_sizes = []
     hc_avg_times = []
     base_avg_times = []
 
-    for i in tqdm.tqdm(range(1, MAX_SPACE_SIZE + 1), desc=f"Space Size {name}"):
+    for i in tqdm.tqdm(range(3, MAX_SPACE_SIZE + 1), desc=f"Space Size {name}"):
         results = []
 
         MAX_X = 2 ** i
@@ -72,7 +72,7 @@ def compute_error(hilbert_scheme, base_scheme, name):
 
         args = [(hc, hc_key, base, base_key, start, end) for (start, end) in queries]
 
-        with multiprocessing.Pool(16) as pool:
+        with multiprocessing.Pool() as pool:
             results.extend(pool.starmap(analyse_performance, args))
 
         base_times, hc_times, base_precisions, hc_precisions  = zip(*results)
@@ -89,16 +89,15 @@ def compute_error(hilbert_scheme, base_scheme, name):
     # Plot the cosine function
     plt.plot(space_sizes, hc_avg_times, label=f"{name}Hilbert", color="orange")
     # Add title and labels
-    plt.title(f"{name}")
-    plt.xlabel("Space Size (2 ** x)")
-    plt.ylabel("Average time")
-
+    plt.title("")
+    plt.xlabel("Space size (2 ** x)")
+    plt.ylabel("Average time (seconds)")
     plt.legend()
     plt.grid(True)
     plt.show()
 
 
 if __name__ == "__main__":
-    # compute_error(LinearHilbert, Linear, "Linear")
+    compute_error(LinearHilbert, Linear, "Linear")
     # compute_error(RangeBRCHilbert, RangeBRC, "RangeBRC")
-    compute_error(TdagSRCHilbert, TdagSRC, "TdagSRC")
+    # compute_error(TdagSRCHilbert, TdagSRC, "TdagSRC")

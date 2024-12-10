@@ -15,9 +15,6 @@ elif [ "$1" == "tdag_src" ]; then
 elif [ "$1" == "quad_brc" ]; then 
 	echo "Running the Quad-BRC scheme on the Gowalla dataset."
 	python3 -m extensions.experiments.benchmark data/gowalla-32x32-1m.pickle -1 quad_brc runquery 100 small
-elif [ "$1" == "hilbert" ]; then
-	echo "Running the Hilbert scheme on the Gowalla dataset."
-	python3 -m extensions.experiments.benchmark data/gowalla-32x32-1m.pickle -1 hilbert runquery 100 small
 else {
    # Display Help
    echo "Please specify one of the schemes below as an argument:"
