@@ -15,9 +15,15 @@ elif [ "$1" == "tdag_src" ]; then
 elif [ "$1" == "quad_brc" ]; then 
 	echo "Running the Quad-BRC scheme on the California dataset."
 	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 quad_brc runquery 100 small
-elif [ "$1" == "hilbert" ]; then
+elif [ "$1" == "linear_hilbert" ]; then
 	echo "Running the Hilbert scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 hilbert runquery 100 small
+	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 linear_hilbert runquery 100 small
+elif [ "$1" == "range_brc_hilbert" ]; then
+	echo "Running the Hilbert scheme on the California dataset."
+	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 range_brc_hilbert runquery 100 small
+elif [ "$1" == "tdag_src_hilbert" ]; then
+	echo "Running the Hilbert scheme on the California dataset."
+	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 tdag_src_hilbert runquery 100 small
 else {
    # Display Help
    echo "Please specify one of the schemes below as an argument:"
@@ -26,6 +32,8 @@ else {
    echo "	quad_brc"
    echo "	qdag_src"
    echo "	tdag_src"
-   echo "	hilbert"
+   echo "	linear_hilbert"
+   echo "	range_brc_hilbert"
+   echo "	tdag_src_hilbert"
 }
 fi

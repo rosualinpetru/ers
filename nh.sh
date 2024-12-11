@@ -23,6 +23,5 @@ else {
    echo "	- quad_brc"
    echo "	- qdag_src"
    echo "	- tdag_src"
-   echo "	- hilbert"
 }
 fi

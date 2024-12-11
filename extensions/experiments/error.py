@@ -90,8 +90,8 @@ def compute_error(hilbert_scheme, base_scheme, name):
     plt.plot(space_sizes, hc_avg_times, label=f"{name}Hilbert", color="orange")
     # Add title and labels
     plt.title("")
-    plt.xlabel("Space size (2 ** x)")
-    plt.ylabel("Average time (seconds)")
+    plt.xlabel("Domain Size (2 ** X)")
+    plt.ylabel("Average Time (seconds)")
     plt.legend()
     plt.grid(True)
     plt.show()
