@@ -96,8 +96,33 @@ def compute_error(hilbert_scheme, base_scheme, name):
     plt.grid(True)
     plt.show()
 
+import pandas as pd
+import pickle
+from collections import defaultdict
+
 
 if __name__ == "__main__":
-    compute_error(LinearHilbert, Linear, "Linear")
+    # compute_error(LinearHilbert, Linear, "Linear")
     # compute_error(RangeBRCHilbert, RangeBRC, "RangeBRC")
     # compute_error(TdagSRCHilbert, TdagSRC, "TdagSRC")
+
+    # Load the pickle file
+    pickle_file = '../../data/cali-1024x1024.pickle'
+    data = pd.read_pickle(pickle_file)
+    print(data)
+
+    # Create a defaultdict of sets
+    converted_data = defaultdict(list)
+
+    # Populate the defaultdict
+    for point, value in data.items():
+        converted_data[point].append(value)
+
+    pickle_file = '../../data/cali-1024x1024.pkl'
+    with open(pickle_file, 'wb') as file:
+        pickle.dump(dict(converted_data), file)
+
+    with open('../../data/cali-1024x1024.pkl', 'rb') as file:
+        loaded_data = pickle.load(file)
+
+    print(loaded_data)

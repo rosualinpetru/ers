@@ -37,27 +37,19 @@ import sys
 from tqdm import tqdm
 import pickle
 
-import matplotlib.pyplot as plt
-
-Multimap = Dict[Point, List[bytes]]
-
-BOUND_X = 2 ** 3
-BOUND_Y = 2 ** 3
-DOC_LENGTH = 10
-NUM_QUERIES = 100
-NUM_PROCESSES = 16
-
+############################################################################################
+# UTILS
+############################################################################################
 
 def next_power_of_2(x):
     return 1 if x == 0 else 2 ** (x - 1).bit_length()
 
-
-def points_to_multimap(pts: List[List[int]]):
+def points_to_multimap(l: List[List[int]]):
     mm = defaultdict(list)
 
     max_x = 0
     max_y = 0
-    for x, y in pts:
+    for x, y in l:
         mm[Point(x, y)].append(bytes(str(x) + " " + str(y), 'utf-8'))
         if x > max_x:
             max_x = x
@@ -67,51 +59,20 @@ def points_to_multimap(pts: List[List[int]]):
     bound = max(x_size, y_size)
     return mm, bound
 
+def generate_random_point(bound_x: int, bound_y: int) -> Point:
+    return Point(secrets.randbelow(bound_x), secrets.randbelow(bound_y))
 
-def points_3d_to_multimap(pts: List[List[int]]):
-    mm = defaultdict(list)
-
-    max_x = 0
-    max_y = 0
-    max_z = 0
-    for x, y, z in pts:
-        mm[Point3D(x, y, z)].append(bytes(str(x) + " " + str(y)+ " " + str(z), 'utf-8'))
-        if x > max_x:
-            max_x = x
-        if y > max_y:
-            max_y = y
-        if z > max_z:
-            max_z = z
-    x_size, y_size, z_size = next_power_of_2(max_x), next_power_of_2(max_y), next_power_of_2(max_z)
-    bound = max(x_size, y_size, z_size)
-    return mm, bound
-
-
-def generate_random_database(
-    bound_x: int, bound_y: int, num_elts: int, bound_document_length: int
-) -> Multimap:
-    """
-    Generates a random database with num_elts elements in the
-    domain [0, bound_x) * [0, bound_y).
-    """
-
+def generate_random_database(bound_x: int, bound_y: int, num_elts: int, bound_document_length: int) -> Dict[Point, List[bytes]]:
     mm = defaultdict(list)
     for index in range(num_elts):
         pt = generate_random_point(bound_x, bound_y)
         data = SecureRandom(bound_document_length)
         mm[pt].append(data)
 
-    return mm, bound_x
+    return mm
 
 
-def generate_dense_database(
-    bound_x: int, bound_y: int, bound_document_length: int
-) -> Multimap:
-    """
-    Generates a random database with num_elts elements in the
-    domain [0, bound_x) * [0, bound_y).
-    """
-
+def generate_dense_database(bound_x: int, bound_y: int, bound_document_length: int) -> Dict[Point, List[bytes]]:
     mm = defaultdict(list)
     pairs = itertools.product(range(bound_x), range(bound_y))
 
@@ -120,71 +81,20 @@ def generate_dense_database(
         data = SecureRandom(bound_document_length)
         mm[pt].append(data)
 
-    return mm, bound_x, bound_y
-
-
-def generate_random_point(bound_x: int, bound_y: int) -> Point:
-    return Point(secrets.randbelow(bound_x), secrets.randbelow(bound_y))
-def generate_random_3d_point(bound_x: int, bound_y: int, bound_z: int) -> Point3D:
-    return Point3D(secrets.randbelow(bound_x), secrets.randbelow(bound_y), secrets.randbelow(bound_z))
-
+    return mm
 
 def generate_random_query(bound_x: int, bound_y: int) -> Tuple[Point, Point]:
-    p1 = generate_random_point(bound_x, bound_y)
-    p2 = generate_random_point(bound_x, bound_y)
+    while True:
+        p1 = generate_random_point(bound_x, bound_y)
+        p2 = generate_random_point(bound_x, bound_y)
+        if p1 < p2:
+            break
 
-    # Guarantee that query satisfies "dominates" assumption:
-    if p1.x > p2.x:
-        p1.x, p2.x = p2.x, p1.x
-    if p1.y > p2.y:
-        p1.y, p2.y = p2.y, p1.y
+    return p1, p2
 
-    return (p1, p2)
-
-def generate_random_small_query(bound_x: int, bound_y: int) -> Tuple[Point, Point]:
-    p1 = generate_random_point(bound_x-1, bound_y-1)
-    p2 = Point(random.randint(p1.x, min(int(p1.x+bound_x*0.3),bound_x-1)), random.randint(p1.y, min(int(p1.y+bound_y*0.3),bound_y-1)))
-    #print(p1,p2)
-    # Guarantee that query satisfies "dominates" assumption:
-    if p1.x > p2.x:
-        p1.x, p2.x = p2.x, p1.x
-    if p1.y > p2.y:
-        p1.y, p2.y = p2.y, p1.y
-
-    return (p1, p2)
-
-def generate_random_target_query(bound_x: int, bound_y: int, target:int) -> Tuple[Point, Point]:
-    p1 = generate_random_point(int(bound_x*(1-(target**0.5)*0.01)), int(bound_y*(1-(target**0.5)*0.01)))
-
-
-    p2 = Point(min(random.randint(p1.x, p1.x+ int(bound_x*target*0.03)),bound_x-1), min(random.randint(p1.y, p1.y+ int(bound_y*target*0.03)),bound_y-1))
-
-    #print(p1,p2)
-    # Guarantee that query satisfies "dominates" assumption:
-    if p1.x > p2.x:
-        p1.x, p2.x = p2.x, p1.x
-    if p1.y > p2.y:
-        p1.y, p2.y = p2.y, p1.y
-
-    return (p1, p2)
-
-def generate_random_3d_query(bound_x: int, bound_y: int, bound_z: int) -> Tuple[Point3D, Point3D]:
-    p1 = generate_random_3d_point(bound_x, bound_y, bound_z)
-    p2 = generate_random_3d_point(bound_x, bound_y, bound_z)
-
-    # Guarantee that query satisfies "dominates" assumption:
-    if p1.x > p2.x:
-        p1.x, p2.x = p2.x, p1.x
-    if p1.y > p2.y:
-        p1.y, p2.y = p2.y, p1.y
-    if p1.z > p2.z:
-        p1.z, p2.z = p2.z, p1.z
-
-    return (p1, p2)
-
-
-# note: include token db for storage measurement for DPRF
-
+############################################################################################
+# Benchmarks
+############################################################################################
 
 def run_benchmarks(schemes, datasets, run_query, benchmark):
     
@@ -392,13 +302,10 @@ def running_avg(numbers):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Parameters for attack")
-    parser.add_argument("dataset", nargs="?", default=None)
-    parser.add_argument("num_records", nargs="?", default=None)
+    parser = argparse.ArgumentParser()
     parser.add_argument("scheme_name", nargs="?", default=None)
-    parser.add_argument("run_query", nargs="?", default=None)
-    parser.add_argument("num_queries", nargs="?", default=None)
-    parser.add_argument("benchmark", nargs="?", default=None)
+    parser.add_argument("queries_per_dataset", nargs="?", default=None)
+    parser.add_argument("datasets_dir", nargs="?", default=None)
     args = parser.parse_args()
 
     data_file = args.dataset
@@ -425,8 +332,7 @@ if __name__ == "__main__":
 
     num_dims = len(pts[0])
 
-    if int(args.num_records) == -1:
-        args.num_records = len(pts)
+    args.num_records = len(pts)
 
     if num_dims == 2:
         datasets.append(points_to_multimap(random.sample(pts, int(args.num_records))))
