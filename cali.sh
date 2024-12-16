@@ -1,39 +1,25 @@
 #!/bin/bash
 
-if [ "$1" == "range_brc" ]; then 
-	echo "Running the Range-BRC scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 range_brc runquery 100 small
-elif [ "$1" == "linear" ]; then 
-	echo "Running the Linear scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 linear runquery 100 small
-elif [ "$1" == "qdag_src" ]; then 
-	echo "Running the Qdag-SRC scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 qdag_src runquery 100 small
-elif [ "$1" == "tdag_src" ]; then 
-	echo "Running the Tdag-SRC scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 tdag_src runquery 100 small
-elif [ "$1" == "quad_brc" ]; then 
-	echo "Running the Quad-BRC scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 quad_brc runquery 100 small
-elif [ "$1" == "linear_hilbert" ]; then
-	echo "Running the Hilbert scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 linear_hilbert runquery 100 small
-elif [ "$1" == "range_brc_hilbert" ]; then
-	echo "Running the Hilbert scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 range_brc_hilbert runquery 100 small
-elif [ "$1" == "tdag_src_hilbert" ]; then
-	echo "Running the Hilbert scheme on the California dataset."
-	python3 -m extensions.experiments.benchmark data/cali-1024x1024.pickle -1 tdag_src_hilbert runquery 100 small
-else {
-   # Display Help
-   echo "Please specify one of the schemes below as an argument:"
-   echo "	linear"
-   echo "	range_brc"
-   echo "	quad_brc"
-   echo "	qdag_src"
-   echo "	tdag_src"
-   echo "	linear_hilbert"
-   echo "	range_brc_hilbert"
-   echo "	tdag_src_hilbert"
-}
+OUTPUT="cali.out.txt"
+
+QUERIES_COUNT=250 # spread across 10 buckets
+SCHEME=$1
+
+VALID_SCHEMES=("linear" "range_brc" "quad_brc" "qdag_src" "tdag_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert")
+
+# Check if the SCHEME is in VALID_SCHEMES
+if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
+  echo "Please specify one of the schemes below as an argument:"
+  for s in "${VALID_SCHEMES[@]}"; do
+    echo "  $s"
+  done
+  exit 1
 fi
+
+for d in $(seq 6 15); do
+  python3 -m extensions.experiments.benchmark \
+    --scheme "$SCHEME" \
+    --queries-count $QUERIES_COUNT \
+    --dataset cali \
+    --dataset-dimension-size $d >>$OUTPUT
+done

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUTPUT="gowalla.out.txt"
+OUTPUT="dense_2d.out.txt"
 
 QUERIES_COUNT=250 # spread across 10 buckets
 SCHEME=$1
@@ -16,10 +16,10 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-for d in $(seq 6 20); do
+for d in $(seq 4 8); do
   python3 -m extensions.experiments.benchmark \
     --scheme "$SCHEME" \
     --queries-count $QUERIES_COUNT \
-    --dataset gowalla \
+    --dataset dense_2d \
     --dataset-dimension-size $d >>$OUTPUT
 done

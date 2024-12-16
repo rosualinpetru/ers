@@ -1,27 +1,23 @@
 #!/bin/bash
 
-if [ "$1" == "range_brc" ]; then 
-	echo "Running the Range-BRC scheme on the NH dataset."
-	python3 -m extensions.experiments.benchmark data/nh_64.txt -1 range_brc_3d runquery 100 small
-elif [ "$1" == "linear" ]; then 
-	echo "Running the Linear scheme on the NH dataset."
-	python3 -m extensions.experiments.benchmark data/nh_64.txt -1 linear runquery 100 small
-elif [ "$1" == "qdag_src" ]; then 
-	echo "Running the Qdag-SRC scheme on the NH dataset."
-	python3 -m extensions.experiments.benchmark data/nh_64.txt -1 qdag_src_3d runquery 100 small
-elif [ "$1" == "tdag_src" ]; then 
-	echo "Running the Tdag-SRC scheme on the NH dataset."
-	python3 -m extensions.experiments.benchmark data/nh_64.txt -1 tdag_src_3d runquery 100 small
-elif [ "$1" == "quad_brc" ]; then 
-	echo "Running the Quad-BRC scheme on the NH dataset."
-	python3 -m extensions.experiments.benchmark data/nh_64.txt -1 quad_brc_3d runquery 100 small
-else {
-   # Display Help
-   echo "Please specify one of the schemes below as an argument:"
-   echo "	- linear"
-   echo "	- range_brc"
-   echo "	- quad_brc"
-   echo "	- qdag_src"
-   echo "	- tdag_src"
-}
+OUTPUT="nh.out.txt"
+
+QUERIES_COUNT=250 # spread across 10 buckets
+SCHEME=$1
+
+VALID_SCHEMES=("linear_3d" "range_brc_3d" "qdag_src_3d" "tdag_src_3d" "quad_brc_3d")
+
+# Check if the SCHEME is in VALID_SCHEMES
+if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
+  echo "Please specify one of the schemes below as an argument:"
+  for s in "${VALID_SCHEMES[@]}"; do
+    echo "  $s"
+  done
+  exit 1
 fi
+
+python3 -m extensions.experiments.benchmark \
+  --scheme "$SCHEME" \
+  --queries-count $QUERIES_COUNT \
+  --dataset nh_64 \
+  --dataset-dimension-size 6 >>$OUTPUT

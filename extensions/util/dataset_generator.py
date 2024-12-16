@@ -1,14 +1,18 @@
 import csv
 import gzip
+import itertools
+import secrets
 import shutil
 from collections import defaultdict
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List
 
 import matplotlib.pyplot as plt
 
-type RawLocationData2D = Dict[Tuple[float, float], list[bytes]]
-type Dataset2D = Dict[Tuple[int, int], list[bytes]]
-type Dataset3D = Dict[Tuple[int, int, int], list[bytes]]
+from extensions.util.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
+
+type RawLocationData2D = Dict[Tuple[float, float], List[bytes]]
+type Database2D = Dict[Tuple[int, int], List[bytes]]
+type Database3D = Dict[Tuple[int, int, int], List[bytes]]
 
 
 ################################################################################################################
@@ -22,13 +26,14 @@ def compute_max_dimension(generator):
 
         i = i + 1
 
+
 def compress_file(input_file: str, output_file: str):
     with open(input_file, 'rb') as f_in:
         with gzip.open(output_file, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
 
 
-def map_location_to_dataset_2d(dataset: RawLocationData2D, dimension_size: int) -> Dataset2D:
+def map_location_to_dataset_2d(dataset: RawLocationData2D, dimension_size: int) -> Database2D:
     # Extract latitudes and longitudes from the dataset keys
     latitudes = [point[0] for point in dataset.keys()]
     longitudes = [point[1] for point in dataset.keys()]
@@ -54,7 +59,7 @@ def map_location_to_dataset_2d(dataset: RawLocationData2D, dimension_size: int) 
     return dict(point_to_nodes)
 
 
-def plot_dataset_2d(dataset: Dataset2D):
+def plot_dataset_2d(dataset: Database2D):
     x_coords = [point[0] for point in dataset.keys()]
     y_coords = [point[1] for point in dataset.keys()]
 
@@ -69,11 +74,11 @@ def plot_dataset_2d(dataset: Dataset2D):
 
 
 ################################################################################################################
-# GENERATORS
+# GENERATORS - Datasets
 ################################################################################################################
 
 # Dimension should be in [0, 15] as increasing the scale brings to difference.
-def generate_cali(dimension_size: int, raw_data_file: str = '../../data/cali.txt.gz') -> Dataset2D:
+def generate_cali(dimension_size: int, raw_data_file: str = './data/cali.txt.gz') -> Database2D:
     dataset = defaultdict(list)
 
     with gzip.open(raw_data_file, 'rt') as f_in:
@@ -91,18 +96,19 @@ def generate_cali(dimension_size: int, raw_data_file: str = '../../data/cali.txt
 # The dataset was adapted to match the same format as Cali. Precisely, a unique
 # id is assigned for each check-in-time.
 # Dimension should be in [0, 42] as increasing the scale brings to difference.
-def generate_gowalla(dimension_size: int) -> Dataset2D:
-    return generate_cali(dimension_size, '../../data/gowalla.txt.gz')
+def generate_gowalla(dimension_size: int) -> Database2D:
+    return generate_cali(dimension_size, './data/gowalla.txt.gz')
 
 
 # The dataset was adapted to match the same format as Cali. Precisely, a unique
 # id is assigned for each latitude-longitude pair.
 # Dimension should be in [0, 14] as increasing the scale brings to difference.
-def generate_spitz(dimension_size: int) -> Dataset2D:
-    return generate_cali(dimension_size, '../../data/spitz.txt.gz')
+def generate_spitz(dimension_size: int) -> Database2D:
+    return generate_cali(dimension_size, './data/spitz.txt.gz')
 
-def generate_nh_64() -> Dataset3D:
-    raw_data_file: str = '../../data/nh_64.txt.gz'
+
+def generate_nh_64() -> Database3D:
+    raw_data_file: str = './data/nh_64.txt.gz'
 
     dataset = defaultdict(list)
 
@@ -116,4 +122,30 @@ def generate_nh_64() -> Dataset3D:
                 z = float(row[3])
                 dataset[(x, y, z)].append(bytes(str(node_id), 'utf-8'))
 
-    return dataset
+    return dict(dataset)
+
+
+################################################################################################################
+# GENERATORS - Programmatic
+################################################################################################################
+
+def generate_dense_database_2d(dimension_size: int) -> Database2D:
+    dataset = defaultdict(list)
+    i = 1
+    for x, y in itertools.product(range(2 ** dimension_size), range(2 ** dimension_size)):
+        dataset[(x, y)].append(bytes(str(i), 'utf-8'))
+        i = i + 1
+
+    return dict(dataset)
+
+
+def generate_random_database_2d(dimension_size: int, records: int) -> Database2D:
+    dataset = defaultdict(list)
+    i = 1
+
+    for index in range(records):
+        (x, y) = secrets.randbelow(2 ** dimension_size), secrets.randbelow(2 ** dimension_size)
+        dataset[(x, y)].append(bytes(str(i), 'utf-8'))
+        i = i + 1
+
+    return dict(dataset)
