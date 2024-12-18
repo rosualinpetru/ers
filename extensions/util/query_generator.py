@@ -2,11 +2,6 @@ import math
 import secrets
 from typing import Dict, Tuple, List
 
-type RawLocationData2D = Dict[Tuple[float, float], List[bytes]]
-type Dataset2D = Dict[Tuple[int, int], List[bytes]]
-type Dataset3D = Dict[Tuple[int, int, int], List[bytes]]
-
-
 ################################################################################################################
 # 2D
 ################################################################################################################
