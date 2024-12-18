@@ -22,8 +22,7 @@ from ers.structures.point_3d import Point3D
 from extensions.schemes.hilbert.linear import LinearHilbert
 from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
 from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
-from extensions.util.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, \
-    generate_random_database_2d
+from extensions.util.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d
 from extensions.util.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
 
 
