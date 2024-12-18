@@ -8,8 +8,6 @@ from typing import Dict, Tuple, List
 
 import matplotlib.pyplot as plt
 
-from extensions.util.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
-
 type RawLocationData2D = Dict[Tuple[float, float], List[bytes]]
 type Database2D = Dict[Tuple[int, int], List[bytes]]
 type Database3D = Dict[Tuple[int, int, int], List[bytes]]
