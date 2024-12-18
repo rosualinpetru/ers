@@ -8,10 +8,6 @@ from typing import Dict, Tuple, List
 
 import matplotlib.pyplot as plt
 
-type RawLocationData2D = Dict[Tuple[float, float], List[bytes]]
-type Database2D = Dict[Tuple[int, int], List[bytes]]
-type Database3D = Dict[Tuple[int, int, int], List[bytes]]
-
 
 ################################################################################################################
 # UTILS
@@ -31,7 +27,7 @@ def compress_file(input_file: str, output_file: str):
             shutil.copyfileobj(f_in, f_out)
 
 
-def map_location_to_dataset_2d(dataset: RawLocationData2D, dimension_size: int) -> Database2D:
+def map_location_to_dataset_2d(dataset: Dict[Tuple[float, float], List[bytes]], dimension_size: int) -> Dict[Tuple[int, int], List[bytes]]:
     # Extract latitudes and longitudes from the dataset keys
     latitudes = [point[0] for point in dataset.keys()]
     longitudes = [point[1] for point in dataset.keys()]
@@ -57,7 +53,7 @@ def map_location_to_dataset_2d(dataset: RawLocationData2D, dimension_size: int) 
     return dict(point_to_nodes)
 
 
-def plot_dataset_2d(dataset: Database2D):
+def plot_dataset_2d(dataset: Dict[Tuple[int, int], List[bytes]]):
     x_coords = [point[0] for point in dataset.keys()]
     y_coords = [point[1] for point in dataset.keys()]
 
@@ -76,7 +72,7 @@ def plot_dataset_2d(dataset: Database2D):
 ################################################################################################################
 
 # Dimension should be in [0, 15] as increasing the scale brings to difference.
-def generate_cali(dimension_size: int, raw_data_file: str = './data/cali.txt.gz') -> Database2D:
+def generate_cali(dimension_size: int, raw_data_file: str = './data/cali.txt.gz') -> Dict[Tuple[int, int], List[bytes]]:
     dataset = defaultdict(list)
 
     with gzip.open(raw_data_file, 'rt') as f_in:
@@ -94,18 +90,18 @@ def generate_cali(dimension_size: int, raw_data_file: str = './data/cali.txt.gz'
 # The dataset was adapted to match the same format as Cali. Precisely, a unique
 # id is assigned for each check-in-time.
 # Dimension should be in [0, 42] as increasing the scale brings to difference.
-def generate_gowalla(dimension_size: int) -> Database2D:
+def generate_gowalla(dimension_size: int) -> Dict[Tuple[int, int], List[bytes]]:
     return generate_cali(dimension_size, './data/gowalla.txt.gz')
 
 
 # The dataset was adapted to match the same format as Cali. Precisely, a unique
 # id is assigned for each latitude-longitude pair.
 # Dimension should be in [0, 14] as increasing the scale brings to difference.
-def generate_spitz(dimension_size: int) -> Database2D:
+def generate_spitz(dimension_size: int) -> Dict[Tuple[int, int], List[bytes]]:
     return generate_cali(dimension_size, './data/spitz.txt.gz')
 
 
-def generate_nh_64() -> Database3D:
+def generate_nh_64() -> Dict[Tuple[int, int, int], List[bytes]]:
     raw_data_file: str = './data/nh_64.txt.gz'
 
     dataset = defaultdict(list)
@@ -127,7 +123,7 @@ def generate_nh_64() -> Database3D:
 # GENERATORS - Programmatic
 ################################################################################################################
 
-def generate_dense_database_2d(dimension_size: int) -> Database2D:
+def generate_dense_database_2d(dimension_size: int) -> Dict[Tuple[int, int], List[bytes]]:
     dataset = defaultdict(list)
     i = 1
     for x, y in itertools.product(range(2 ** dimension_size), range(2 ** dimension_size)):
@@ -137,7 +133,7 @@ def generate_dense_database_2d(dimension_size: int) -> Database2D:
     return dict(dataset)
 
 
-def generate_random_database_2d(dimension_size: int, records: int) -> Database2D:
+def generate_random_database_2d(dimension_size: int, records: int) -> Dict[Tuple[int, int], List[bytes]]:
     dataset = defaultdict(list)
     i = 1
 

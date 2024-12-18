@@ -1,5 +1,3 @@
-import time
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -7,10 +5,9 @@ from ers.schemes.common.emm_engine import EMMEngine
 from ers.structures.point import Point
 from ers.structures.rect import Rect
 from ers.util.serialization import BytesToObject
-from extensions.experiments.utils import fill_space_plaintext_mm, random_query_2d
 from extensions.schemes.hilbert.linear import LinearHilbert
-from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
-from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
+from extensions.util.dataset_generator import generate_dense_database_2d
+from extensions.util.query_generator import generate_random_query_2d
 
 if __name__ == "__main__":
     # VARIABLES
@@ -20,24 +17,18 @@ if __name__ == "__main__":
     MERGE_GAP_TOLERANCE = 1
     SCALING_PERCENTAGE = 0
 
-    MIN_X = 0  # inclusive
-    MIN_Y = 0
+    DIMENSION_SIZE = 3
 
-    MAX_X = 8  # exclusive
-    MAX_Y = 8
-
-    # PLAINTEXT
-    space_start = Point(MIN_X, MIN_Y)
-    space_end = Point(MAX_X - 1, MAX_Y - 1)
-
-    plaintext_mm = fill_space_plaintext_mm(space_start, space_end)
+    plaintext_mm = generate_dense_database_2d(DIMENSION_SIZE)
+    plaintext_mm = {Point(*t): plaintext_mm[t] for t in plaintext_mm}
 
     # HILBERT INIT
-    hc = SCHEME(EMMEngine(MAX_X, MAX_Y))
+    hc = SCHEME(EMMEngine(2 ** DIMENSION_SIZE, 2 ** DIMENSION_SIZE))
     key = hc.setup(SEC_PARAM)
     hc.build_index(key, plaintext_mm)
 
-    (query_start, query_end) = random_query_2d(space_start, space_end)
+    (c1, c2) = generate_random_query_2d(2 ** DIMENSION_SIZE, 2 ** DIMENSION_SIZE)
+    (query_start, query_end) = (Point(*c1), Point(*c2))
 
     search_tokens = hc.trapdoor(key, query_start, query_end, MERGE_GAP_TOLERANCE, SCALING_PERCENTAGE)
 
@@ -51,6 +42,7 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(256, 256))
 
+
     def point_color(p: Point):
         q = Rect(query_start, Point(query_end.x + 1, query_end.y + 1))
         if q.contains_point(p):
@@ -63,6 +55,7 @@ if __name__ == "__main__":
                 return "blue"
             else:
                 return "red"
+
 
     for idx, (x, y) in enumerate(hilbert_points):
         p = Point(x, y)
@@ -90,8 +83,8 @@ if __name__ == "__main__":
         if color == "green":
             segment_color = next_color
 
-
         plt.plot([x, next_x], [y, next_y], color=segment_color)
+
 
     def plot_rect(p1: Point, p2: Point, colour: str, label: str):
         x1 = p1.x - 0.1
@@ -102,7 +95,8 @@ if __name__ == "__main__":
 
         plt.fill([x1, x2, x2, x1], [y1, y1, y2, y2], color=colour, alpha=0.1, label=label)
 
-    plot_rect(space_start, space_end, "yellow", "Search Space")
+
+    plot_rect(Point(0, 0), Point(2 ** DIMENSION_SIZE - 1, 2 ** DIMENSION_SIZE - 1), "yellow", "Search Space")
     plot_rect(query_start, query_end, "green", "Query")
 
     plt.title(f"Hilbert Curve")

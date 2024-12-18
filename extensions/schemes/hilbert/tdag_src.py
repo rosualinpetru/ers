@@ -39,6 +39,7 @@ class TdagSRCHilbert(Hilbert):
         trapdoors.add(self.emm_engine.trapdoor(key, ObjectToBytes(cover)))
         return trapdoors
 
+
 def _descend_tree(val: int, r: tuple[int, int]) -> List[tuple[int, int]]:
     ranges = []
     while r != (val, val):

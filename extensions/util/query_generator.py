@@ -58,6 +58,7 @@ def generate_bucket_query_2d(bound_x: int, bound_y: int, bucket_index: int, buck
 
         return p1, p2
 
+
 ################################################################################################################
 # 3D
 ################################################################################################################
@@ -75,6 +76,7 @@ def generate_random_query_3d(bound_x: int, bound_y: int, bound_z: int) -> Tuple[
             break
 
     return p1, p2
+
 
 def generate_bucket_query_3d(bound_x: int, bound_y: int, bound_z: int, bucket_index: int, bucket_size: int) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
     total_volume = bound_x * bound_y * bound_z
