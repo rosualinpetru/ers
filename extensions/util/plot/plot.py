@@ -6,8 +6,8 @@ from ers.structures.point import Point
 from ers.structures.rect import Rect
 from ers.util.serialization import BytesToObject
 from extensions.schemes.hilbert.linear import LinearHilbert
-from extensions.util.dataset_generator import generate_dense_database_2d
-from extensions.util.query_generator import generate_random_query_2d
+from extensions.util.generator.dataset_generator import generate_dense_database_2d
+from extensions.util.generator.query_generator import generate_random_query_2d
 
 if __name__ == "__main__":
     # VARIABLES
