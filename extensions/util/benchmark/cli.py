@@ -75,7 +75,7 @@ def get_dataset_3d(dataset_name: str, dimension_bits: int, records_limit: int):
         case "nh_64":
             dataset = generate_nh_64()
         case _:
-            raise ValueError(f"Unknown 2D dataset: {dataset_name}. Should be: nh_64.")
+            raise ValueError(f"Unknown 3D dataset: {dataset_name}. Should be: nh_64.")
 
     dataset = {Point3D(*t): dataset[t] for t in dataset}
 
@@ -96,10 +96,10 @@ def get_dataset(dimensions: int, dataset_name: str, dimension_bits: int, records
 #############################################################################
 
 def get_dimensions(scheme: str) -> int:
-    if scheme in schemes_2d:
+    if scheme in schemes_2d.values():
         return 2
 
-    if scheme in schemes_3d:
+    if scheme in schemes_3d.values():
         return 3
 
     raise ValueError(f"Unknown scheme: {scheme}")
@@ -154,15 +154,15 @@ if __name__ == "__main__":
 
     dataset = get_dataset(dimensions, args.dataset_name, args.dataset_dimension_bits, args.records_limit)
 
-    print(f"************************************************************"
-          f"* Running Benchmark:"
-          f"*     > Scheme: {args.scheme}"
-          f"*     > Dataset name: {args.dataset_name}, Dimensions: {dimensions}"
-          f"*     > Dataset dimension_bits: {args.dataset_dimension_bits}"
-          f"*     > Records limit: {args.records_limit}"
-          f"*     > Queries count: {args.queries_count}"
-          f"************************************************************")
+    print(f"************************************************************\n"
+          f"* Running Benchmark:\n"
+          f"*     > Scheme: {args.scheme}\n"
+          f"*     > Dataset name: {args.dataset_name}, Dimensions: {dimensions}\n"
+          f"*     > Dataset dimension_bits: {args.dataset_dimension_bits}\n"
+          f"*     > Records limit: {args.records_limit}\n"
+          f"*     > Queries count: {args.queries_count}\n"
+          f"************************************************************\n")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_name = f"{args.scheme}_{args.dataset_name}_{dimensions}_{args.dataset_dimension_bits}_{args.records_limit}_{args.queries_count}_{timestamp}.xlsx"
+    report_name = f"./benchmarks/{args.scheme}_{args.dataset_name}_{dimensions}_{args.dataset_dimension_bits}_{args.records_limit}_{args.queries_count}_{timestamp}.xlsx"
     run_benchmark(report_name, scheme, dimensions, dataset, args.queries_count, args.dataset_dimension_bits)

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-OUTPUT="nh.out.txt"
-
 QUERIES_COUNT=250 # spread across 10 buckets
 SCHEME=$1
 
@@ -16,8 +14,9 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-python3 -m extensions.experiments.benchmark \
+python3 -m extensions.util.benchmark.cli \
   --scheme "$SCHEME" \
-  --queries-count $QUERIES_COUNT \
-  --dataset nh_64 \
-  --dataset-dimension-size 6 >>$OUTPUT
+  --dataset-name nh_64 \
+  --dataset-dimension-bits 6 \
+  --records-limit 1000000 \
+  --queries-count $QUERIES_COUNT

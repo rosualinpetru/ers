@@ -16,10 +16,11 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-for d in $(seq 4 8); do
-  python3 -m extensions.experiments.benchmark \
+for d in $(seq 6 6); do
+  python3 -m extensions.util.benchmark.cli \
     --scheme "$SCHEME" \
-    --queries-count $QUERIES_COUNT \
-    --dataset dense_2d \
-    --dataset-dimension-size $d >>$OUTPUT
+    --dataset-name dense_2d \
+    --dataset-dimension-bits $d \
+    --records-limit 1000000 \
+    --queries-count $QUERIES_COUNT
 done

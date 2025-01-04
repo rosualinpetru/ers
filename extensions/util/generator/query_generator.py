@@ -2,6 +2,7 @@ import math
 import secrets
 from typing import Dict, Tuple, List
 
+
 ################################################################################################################
 # 2D
 ################################################################################################################
@@ -14,44 +15,45 @@ def generate_random_query_2d(bound_x: int, bound_y: int) -> Tuple[Tuple[int, int
     while True:
         p1 = generate_random_point_2d(bound_x, bound_y)
         p2 = generate_random_point_2d(bound_x, bound_y)
-        if p1 < p2:
+        if p1 <= p2 and p1[1] <= p2[1]:
             break
 
     return p1, p2
 
 
 def generate_bucket_query_2d(bound_x: int, bound_y: int, bucket_index: int, bucket_size: int) -> Tuple[Tuple[int, int], Tuple[int, int]]:
-    total_area = bound_x * bound_y
+    total_area = (bound_x - 1) * (bound_y - 1)
     min_area = math.ceil((bucket_index * bucket_size) / 100.0 * total_area)
     max_area = math.floor(((bucket_index + 1) * bucket_size) / 100.0 * total_area)
 
+    min_width = max(1, math.ceil(min_area / (bound_y - 1)))  # do not consider trivial case of queries representing a point
+    max_width = min(bound_x - 1, max_area)
+
     while True:
-        w = secrets.randbelow(bound_x) + 1
+        width = min_width + secrets.randbelow(max_width - min_width + 1)
 
-        h_min = math.ceil(min_area / w)
-        h_max = math.floor(max_area / w)
+        min_height = max(1, math.ceil(min_area / width))
+        max_height = min(bound_y - 1, math.floor(max_area / width))
 
-        if h_min > h_max:
-            continue
+        if 0 < width < bound_x and 0 < min_height < bound_y and 0 < max_height < bound_y:
+            height = min_height + secrets.randbelow(max_height - min_height + 1)
 
-        max_x_1 = bound_x - w - 1
-        max_y_1 = bound_y - h_min - 1
+            area = width * height
+            if min_area <= area <= max_area:
+                break
 
-        if max_x_1 < 0 or max_y_1 < 0:
-            continue
+    while True:
+        x1_max = bound_x - width
+        y1_max = bound_y - height
 
-        x_1 = secrets.randbelow(max_x_1 + 1)
-        y_1 = secrets.randbelow(max_y_1 + 1)
-        p1 = (x_1, y_1)
+        x1 = secrets.randbelow(x1_max)
+        y1 = secrets.randbelow(y1_max)
 
-        actual_h_max = min(h_max, bound_y - y_1 - 1)
-        if actual_h_max < h_min:
-            continue
+        x2 = x1 + width
+        y2 = y1 + height
 
-        h = secrets.randbelow(actual_h_max - h_min + 1) + h_min
-        p2 = (p1[0] + w, p1[1] + h)
-
-        return p1, p2
+        if 0 <= x1 < bound_x and 0 <= y1 <= bound_y and 0 <= x2 < bound_x and 0 <= y2 <= bound_y:
+            return (x1, y1), (x2, y2)
 
 
 ################################################################################################################
@@ -67,47 +69,51 @@ def generate_random_query_3d(bound_x: int, bound_y: int, bound_z: int) -> Tuple[
     while True:
         p1 = generate_random_point_3d(bound_x, bound_y, bound_z)
         p2 = generate_random_point_3d(bound_x, bound_y, bound_z)
-        if p1 < p2:
+        if p1[0] <= p2[0] and p1[1] <= p2[1] and p1[2] <= p2[2]:
             break
 
     return p1, p2
 
 
 def generate_bucket_query_3d(bound_x: int, bound_y: int, bound_z: int, bucket_index: int, bucket_size: int) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
-    total_volume = bound_x * bound_y * bound_z
+    total_volume = (bound_x - 1) * (bound_y - 1) * (bound_z - 1)
     min_volume = math.ceil((bucket_index * bucket_size) / 100.0 * total_volume)
     max_volume = math.floor(((bucket_index + 1) * bucket_size) / 100.0 * total_volume)
 
+    min_width = max(1, math.ceil(min_volume / ((bound_y - 1) * (bound_z - 1))))
+    max_width = min(bound_x - 1, max_volume)
+
     while True:
-        w_x = secrets.randbelow(bound_x) + 1
-        w_y = secrets.randbelow(bound_y) + 1
+        width = min_width + secrets.randbelow(max_width - min_width + 1)
 
-        denom = w_x * w_y
-        w_z_min = math.ceil(min_volume / denom)
-        w_z_max = math.floor(max_volume / denom)
+        min_height = max(1, math.ceil(min_volume / (width * (bound_z - 1))))
+        max_height = min(bound_y - 1, math.floor(max_volume / width))
 
-        if w_z_min > w_z_max:
-            continue
+        if 0 < width < bound_x and 0 < min_height < bound_y and 0 < max_height < bound_y:
+            height = min_height + secrets.randbelow(max_height - min_height + 1)
 
-        max_x_1 = bound_x - w_x
-        max_y_1 = bound_y - w_y
-        max_z_1 = bound_z - w_z_min
+            min_depth = max(1, math.ceil(min_volume / (width * height)))
+            max_depth = min(bound_z - 1, math.floor(max_volume / (width * height)))
 
-        if max_x_1 < 0 or max_y_1 < 0 or max_z_1 < 0:
-            continue
+            if 0 < height < bound_y and 0 < min_depth < bound_z and 0 < max_depth < bound_z:
+                depth = min_depth + secrets.randbelow(max_depth - min_depth + 1)
 
-        x_1 = secrets.randbelow(max_x_1 + 1)
-        y_1 = secrets.randbelow(max_y_1 + 1)
-        z_1 = secrets.randbelow(max_z_1 + 1)
-        p1 = (x_1, y_1, z_1)
+                volume = width * height * depth
+                if min_volume <= volume <= max_volume:
+                    break
 
-        actual_w_z_max = min(w_z_max, bound_z - z_1)
+    while True:
+        x1_max = bound_x - width
+        y1_max = bound_y - height
+        z1_max = bound_z - depth
 
-        if actual_w_z_max < w_z_min:
-            continue
+        x1 = secrets.randbelow(x1_max)
+        y1 = secrets.randbelow(y1_max)
+        z1 = secrets.randbelow(z1_max)
 
-        w_z = secrets.randbelow(actual_w_z_max - w_z_min + 1) + w_z_min
+        x2 = x1 + width
+        y2 = y1 + height
+        z2 = z1 + depth
 
-        p2 = (p1[0] + w_x, p1[1] + w_y, p1[2] + w_z)
-
-        return p1, p2
+        if 0 <= x1 < bound_x and 0 <= y1 < bound_y and 0 <= z1 < bound_z and 0 <= x2 < bound_x and 0 <= y2 < bound_y and 0 <= z2 < bound_z:
+            return (x1, y1, z1), (x2, y2, z2)

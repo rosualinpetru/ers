@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -19,7 +21,7 @@ if __name__ == "__main__":
 
     DIMENSION_SIZE = 3
 
-    plaintext_mm = generate_dense_database_2d(DIMENSION_SIZE)
+    plaintext_mm = generate_dense_database_2d(DIMENSION_SIZE, 1000000)
     plaintext_mm = {Point(*t): plaintext_mm[t] for t in plaintext_mm}
 
     # HILBERT INIT
