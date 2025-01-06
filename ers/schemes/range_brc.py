@@ -19,7 +19,7 @@ from .common.emm_engine import EMMEngine
 from .common.emm import EMM
 from ..structures.point import Point
 from ..structures.range_tree import RangeTree
-from ..util.serialization import ObjectToBytes
+from ..util.serialization.serialization import ObjectToBytes
 
 from typing import Dict, List, Set
 
@@ -32,11 +32,13 @@ from tqdm import tqdm
 
 
 class RangeBRC(EMM):
-    def __init__(self, emm_engine: EMMEngine, encrypted_db: Dict[bytes, bytes] = {}):
-        self.encrypted_db = encrypted_db
+    def __init__(self, emm_engine: EMMEngine):
+        super().__init__(emm_engine)
+
         self.x_tree = None
         self.y_tree = None
-        super().__init__(emm_engine)
+
+        self.encrypted_db = None
 
     @classmethod
     def descend_tree(self, val: int, rnge: List[int]) -> List[int]:

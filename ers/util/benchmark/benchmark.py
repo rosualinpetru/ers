@@ -8,7 +8,8 @@ from typing import Dict
 from tqdm import tqdm
 
 from ers.schemes.common.emm import EMMEngine
-from ers.schemes.linear import Linear, Linear3D
+from ers.schemes.hilbert.linear_hilbert import LinearHilbert2D
+from ers.schemes.linear import Linear3D, Linear2D
 from ers.schemes.qdag_src import QdagSRC
 from ers.schemes.qdag_src_3d import QdagSRC3D
 from ers.schemes.quad_brc import QuadBRC
@@ -19,17 +20,16 @@ from ers.schemes.tdag_src import TdagSRC
 from ers.schemes.tdag_src_3d import TdagSRC3D
 from ers.structures.point import Point
 from ers.structures.point_3d import Point3D
-from extensions.schemes.hilbert.linear_hilbert import LinearHilbert
-from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
-from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
-from extensions.util.benchmark.xlsx_util import XLSXUtil
-from extensions.util.generator.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
+from ers.util.benchmark.xlsx_util import XLSXUtil
+from ers.util.generator.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
+from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
+from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
 
 BUCK_SIZE = 10
 
 
 def compute_precision(scheme):
-    if isinstance(scheme, Linear) or isinstance(scheme, Linear3D):
+    if isinstance(scheme, Linear2D) or isinstance(scheme, Linear3D):
         return False
 
     if isinstance(scheme, QuadBRC) or isinstance(scheme, QuadBRC3D):
@@ -44,7 +44,7 @@ def compute_precision(scheme):
     if isinstance(scheme, TdagSRC) or isinstance(scheme, TdagSRC3D):
         return True
 
-    if isinstance(scheme, LinearHilbert):
+    if isinstance(scheme, LinearHilbert2D):
         return False
 
     if isinstance(scheme, RangeBRCHilbert):
@@ -78,9 +78,9 @@ def generate_query_bucks(queries_count: int, dimensions: int, dataset_dimension_
     return dict(ten_bucks)
 
 
-def run_query(target_bucket, p1, p2, scheme, key, dimensions, dataset):
+def run_query(target_bucket, query, scheme, key, dimensions, dataset):
     t0 = time.time_ns()
-    trapdoors = scheme.trapdoor(key, p1, p2)
+    trapdoors = scheme.trapdoor(key, query)
     t1 = time.time_ns()
 
     trapdoor_time = t1 - t0
@@ -154,7 +154,7 @@ def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_
     ### Building index
     #############################################################################
     print("Building index...")
-    scheme = scheme_constructor(EMMEngine(bound, bound))
+    scheme = scheme_constructor(EMMEngine(dimensions * [bound]))
     key = scheme.setup(16)
 
     t0 = time.time_ns()

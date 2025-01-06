@@ -2,7 +2,10 @@ import argparse
 from argparse import Namespace
 from datetime import datetime
 
-from ers.schemes.linear import Linear, Linear3D
+from ers.schemes.hilbert.linear_hilbert import LinearHilbert2D
+from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
+from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
+from ers.schemes.linear import Linear3D, Linear2D
 from ers.schemes.qdag_src import QdagSRC
 from ers.schemes.qdag_src_3d import QdagSRC3D
 from ers.schemes.quad_brc import QuadBRC
@@ -11,26 +14,22 @@ from ers.schemes.range_brc import RangeBRC
 from ers.schemes.range_brc_3d import RangeBRC3D
 from ers.schemes.tdag_src import TdagSRC
 from ers.schemes.tdag_src_3d import TdagSRC3D
-from ers.structures.point import Point
-from ers.structures.point_3d import Point3D
-from extensions.schemes.hilbert.linear_hilbert import LinearHilbert
-from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
-from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
-from extensions.util.benchmark.benchmark import run_benchmark
-from extensions.util.generator.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d
+from ers.structures.pointnd import PointND
+from ers.util.benchmark.benchmark import run_benchmark
+from ers.util.generator.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d
 
 #############################################################################
 ### SCHEME DICTS
 #############################################################################
 
 schemes_2d = {
-    "linear": Linear,
+    "linear": Linear2D,
     "range_brc": RangeBRC,
     "qdag_src": QdagSRC,
     "quad_brc": QuadBRC,
     "tdag_src": TdagSRC,
 
-    "linear_hilbert": LinearHilbert,
+    "linear_hilbert": LinearHilbert2D,
     "range_brc_hilbert": RangeBRCHilbert,
     "tdag_src_hilbert": TdagSRCHilbert
 }
@@ -65,7 +64,7 @@ def get_dataset_2d(dataset_name: str, dimension_bits: int, records_limit: int):
         case _:
             raise ValueError(f"Unknown 2D dataset: {dataset_name}. Should be: cali, spitz, gowalla, dense_2d, random_2d.")
 
-    dataset = {Point(*t): dataset[t] for t in dataset}
+    dataset = {PointND(list(t)): dataset[t] for t in dataset}
 
     return dataset
 
@@ -77,7 +76,7 @@ def get_dataset_3d(dataset_name: str, dimension_bits: int, records_limit: int):
         case _:
             raise ValueError(f"Unknown 3D dataset: {dataset_name}. Should be: nh_64.")
 
-    dataset = {Point3D(*t): dataset[t] for t in dataset}
+    dataset = {PointND(list(t)): dataset[t] for t in dataset}
 
     return dataset
 

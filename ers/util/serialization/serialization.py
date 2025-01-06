@@ -15,8 +15,9 @@
 ## limitations under the License.
 ##
 
-import json
 import base64
+import json
+
 
 def _print_bytes(b: bytes) -> None:
     """
@@ -45,8 +46,6 @@ def __detect_tags(s: str):
     return s[:3] == "^^^" and s[-3:] == "$$$"
 
 
-    
-
 def _prepare_bytes(o):
     """
     A helper funtion for ObjectToBytes
@@ -55,7 +54,6 @@ def _prepare_bytes(o):
         result = {}
         for key, value in o.items():
             if isinstance(key, bytes):
-
                 key = "^^^" + __bytes_to_b64(key) + "$$$"
             if isinstance(value, bytes):
                 value = "^^^" + __bytes_to_b64(value) + "$$$"
@@ -84,8 +82,6 @@ def _prepare_bytes(o):
             f"ERROR: Unserializable type {type(o)} detected! Valid types are [dict, list, int, str, float, bool, NoneType]"
         )
         raise ValueError
-
-
 
 
 def _repair_bytes(o):
@@ -131,8 +127,6 @@ def _repair_bytes(o):
             f"ERROR: Undeserializable type {type(o)} detected! Valid types are [dict, list, int, str, float, bool, NoneType]"
         )
         raise ValueError
-
-
 
 
 def ObjectToBytes(o: object) -> bytes:

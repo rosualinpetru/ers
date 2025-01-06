@@ -3,8 +3,8 @@ from typing import Dict, List, Set
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.hilbert.hilbert import HilbertScheme
 from ers.schemes.linear import Linear
-from extensions.structures.hyperrect import HyperRect
-from extensions.structures.pointnd import PointND
+from ers.structures.hyperrect import HyperRect
+from ers.structures.pointnd import PointND
 
 
 ###################################################################################################
@@ -25,14 +25,14 @@ class LinearHilbert(HilbertScheme):
         ranges = self.hc.best_range_cover_with_merging(query, merging_tolerance)
 
         trapdoors = set.union(
-            *[self.linear_scheme.trapdoor(key, HyperRect(PointND([start]), PointND([end]))) for start, end in ranges]
+            *[self.linear_scheme.trapdoor(key, HyperRect.from_coords([start], [end])) for start, end in ranges]
         )
 
         return trapdoors
 
 
 ###################################################################################################
-### IMPLEMENTATIONS
+### CONCRETE
 ###################################################################################################
 
 class LinearHilbert2D(LinearHilbert):

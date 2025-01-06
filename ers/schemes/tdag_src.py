@@ -17,12 +17,11 @@
 
 from __future__ import annotations
 
-from ..util.serialization import ObjectToBytes
 from .common.emm_engine import EMMEngine
 from .common.emm import EMM
 from ..structures.point import Point
 from ..structures.tdag import Tdag
-from ..util.serialization import ObjectToBytes
+from ..util.serialization.serialization import ObjectToBytes
 
 from collections import defaultdict
 
@@ -30,6 +29,7 @@ from tqdm import tqdm
 import collections
 
 import math
+
 
 class TdagSRC(EMM):
     def __init__(self, emm_engine: EMMEngine, encrypted_db: Dict[bytes, bytes] = {}):
@@ -47,20 +47,17 @@ class TdagSRC(EMM):
 
             middle = ((rnge[0] + rnge[1]) // 2)
 
-            mid_0 = (middle  - ((rnge[0] + rnge[1]) // 4))
-            mid_1 = (middle  + ((rnge[0] + rnge[1]) // 4))+1
-
-
+            mid_0 = (middle - ((rnge[0] + rnge[1]) // 4))
+            mid_1 = (middle + ((rnge[0] + rnge[1]) // 4)) + 1
 
             if val >= mid_0 and val <= mid_1 and (rnge[1] - rnge[0]) > 1:
                 if [mid_0, mid_1] not in rnges:
                     rnges.append([mid_0, mid_1])
-   
+
             if val <= ((rnge[0] + rnge[1]) // 2):
                 rnge = [rnge[0], ((rnge[0] + rnge[1]) // 2)]
             else:
                 rnge = [((rnge[0] + rnge[1]) // 2) + 1, rnge[1]]
-
 
         rnges.append([val, val])
         return rnges
@@ -87,7 +84,6 @@ class TdagSRC(EMM):
                     modified_db[label].extend(vals)
 
         self.encrypted_db = self.emm_engine.build_index(key, modified_db)
-
 
     def generate_cover(self, p1: Point, p2: Point):
         x_cover = self.x_tree.get_single_range_cover((p1.x, p2.x))

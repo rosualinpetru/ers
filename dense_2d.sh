@@ -17,7 +17,7 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
 fi
 
 for d in $(seq 6 6); do
-  python3 -m extensions.util.benchmark.cli \
+  python3 -m ers.util.benchmark.cli \
     --scheme "$SCHEME" \
     --dataset-name dense_2d \
     --dataset-dimension-bits $d \

@@ -1,7 +1,7 @@
 from typing import List, Tuple
 
-from extensions.structures.hyperrect import HyperRect
-from extensions.structures.pointnd import PointND
+from ers.structures.hyperrect import HyperRect
+from ers.structures.pointnd import PointND
 
 
 class Scaler:
@@ -33,7 +33,7 @@ class Scaler:
             for i, v in enumerate(p2):
                 p2[i] = min(reduced_max_coordinate, v + 1)
 
-        return HyperRect(PointND(p1), PointND(p2))
+        return HyperRect.from_coords(p1, p2)
 
     def _hilbert_upscale(self, bits: int, ranges: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
         upscale_factor = bits * 2

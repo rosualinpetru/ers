@@ -17,13 +17,11 @@
 
 from __future__ import annotations
 
-from ..util.serialization import ObjectToBytes
 from .common.emm_engine import EMMEngine
 from .common.emm import EMM
 from ..structures.point_3d import Point3D
 from ..structures.tdag import Tdag
-from ..util.serialization import ObjectToBytes
-
+from ..util.serialization.serialization import ObjectToBytes
 
 from collections import defaultdict
 
@@ -31,6 +29,7 @@ from tqdm import tqdm
 import collections
 
 import math
+
 
 class TdagSRC3D(EMM):
     def __init__(self, emm_engine: EMMEngine, encrypted_db: Dict[bytes, bytes] = {}):
@@ -46,22 +45,21 @@ class TdagSRC3D(EMM):
 
             middle = ((rnge[0] + rnge[1]) // 2)
 
-            mid_0 = (middle  - ((rnge[0] + rnge[1]) // 4))
-            mid_1 = (middle  + ((rnge[0] + rnge[1]) // 4))+1
-
+            mid_0 = (middle - ((rnge[0] + rnge[1]) // 4))
+            mid_1 = (middle + ((rnge[0] + rnge[1]) // 4)) + 1
 
             if val >= mid_0 and val <= mid_1 and (rnge[1] - rnge[0]) > 1:
                 if [mid_0, mid_1] not in rnges:
                     rnges.append([mid_0, mid_1])
-    
+
             if val <= ((rnge[0] + rnge[1]) // 2):
                 rnge = [rnge[0], ((rnge[0] + rnge[1]) // 2)]
             else:
                 rnge = [((rnge[0] + rnge[1]) // 2) + 1, rnge[1]]
 
-
         rnges.append([val, val])
         return rnges
+
     def build_index(self, key: bytes, plaintext_mm: Dict[Point3D, List[bytes]]) -> Dict[Tuple[int, int], int]:
         # At the moment we only support squares
         x_tree_height = math.ceil(math.log2(self.emm_engine.MAX_X))

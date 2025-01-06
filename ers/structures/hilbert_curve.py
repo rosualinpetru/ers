@@ -2,8 +2,8 @@ from typing import List, Tuple, Iterable
 
 from hilbertcurve.hilbertcurve import HilbertCurve as Hc
 
-from extensions.structures.hyperrect import HyperRect
-from extensions.structures.pointnd import PointND
+from ers.structures.hyperrect import HyperRect
+from ers.structures.pointnd import PointND
 
 
 class HilbertCurve:

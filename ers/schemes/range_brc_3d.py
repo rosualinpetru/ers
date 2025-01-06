@@ -19,7 +19,7 @@ from .common.emm_engine import EMMEngine
 from .common.emm import EMM
 from ..structures.point_3d import Point3D
 from ..structures.range_tree import RangeTree
-from ..util.serialization import ObjectToBytes
+from ..util.serialization.serialization import ObjectToBytes
 
 from typing import Dict, List, Set
 

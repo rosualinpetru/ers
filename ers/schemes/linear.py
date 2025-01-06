@@ -3,8 +3,8 @@ from typing import Dict, List, Set
 
 from ers.schemes.common.emm import EMM
 from ers.schemes.common.emm_engine import EMMEngine
-from extensions.structures.hyperrect import HyperRect
-from extensions.structures.pointnd import PointND
+from ers.structures.hyperrect import HyperRect
+from ers.structures.pointnd import PointND
 
 
 ###################################################################################################

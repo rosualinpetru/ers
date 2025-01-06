@@ -1,15 +1,13 @@
-from typing import Dict, Set
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.hilbert.linear_hilbert import LinearHilbert2D
 from ers.util.serialization import BytesToObject
-from extensions.structures.hyperrect import HyperRect
-from extensions.structures.pointnd import PointND
-from extensions.util.generator.dataset_generator import generate_dense_database_2d
-from extensions.util.generator.query_generator import generate_random_query_2d
+from ers.structures.hyperrect import HyperRect
+from ers.structures.pointnd import PointND
+from ers.util.generator.dataset_generator import generate_dense_database_2d
+from ers.util.generator.query_generator import generate_random_query_2d
 
 if __name__ == "__main__":
     # VARIABLES
@@ -30,7 +28,7 @@ if __name__ == "__main__":
     hc.build_index(key, plaintext_mm)
 
     (c1, c2) = generate_random_query_2d(2 ** DIMENSION_SIZE, 2 ** DIMENSION_SIZE)
-    query = HyperRect(PointND(list(c1)), PointND(list(c2)))
+    query = HyperRect.from_coords(list(c1), list(c2))
 
     search_tokens = hc.trapdoor(key, query, MERGE_GAP_TOLERANCE)
 

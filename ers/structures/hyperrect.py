@@ -2,8 +2,8 @@ import functools
 from itertools import product
 from typing import List
 
-from ers.util.serialization import ObjectToBytes, BytesToObject
-from extensions.structures.pointnd import PointND
+from ers.util.serialization.serialization import ObjectToBytes, BytesToObject
+from ers.structures.pointnd import PointND
 
 
 @functools.total_ordering
@@ -18,6 +18,10 @@ class HyperRect:
         for i in range(0, len(start.coords)):
             if start.coords[i] > end.coords[i]:
                 raise ValueError
+
+    @classmethod
+    def from_coords(cls, start: List[int], end: List[int]):
+        return cls(PointND(start), PointND(end))
 
     def __str__(self):
         return "HyperRect[" + str(self.start) + ", " + str(self.end) + "]"

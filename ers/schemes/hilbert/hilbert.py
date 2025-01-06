@@ -4,7 +4,7 @@ from typing import Set, List, Dict
 from ers.schemes.common.emm import EMM
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.structures.hilbert_curve import HilbertCurve
-from extensions.structures.pointnd import PointND
+from ers.structures.pointnd import PointND
 
 
 class HilbertScheme(EMM):
