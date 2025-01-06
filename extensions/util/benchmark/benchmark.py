@@ -197,8 +197,7 @@ def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_
             for (p1, p2) in ten_bucks[target_bucket]:
                 tasks.append((target_bucket, p1, p2, scheme, key, dimensions, dataset))
 
-        chunks = max(1, math.ceil(len(tasks) / os.cpu_count()))
-        results = list(tqdm(executor.map(run_query_with_params, tasks, chunksize=chunks), total=len(tasks), desc="Running queries"))
+        results = list(tqdm(executor.map(run_query_with_params, tasks), total=len(tasks), desc="Running queries"))
 
         for result in results:
             tb = result["target_bucket"]
