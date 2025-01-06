@@ -1,9 +1,8 @@
 import math
-import os
 import sys
 import time
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed, ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from typing import Dict
 
 from tqdm import tqdm
@@ -20,7 +19,7 @@ from ers.schemes.tdag_src import TdagSRC
 from ers.schemes.tdag_src_3d import TdagSRC3D
 from ers.structures.point import Point
 from ers.structures.point_3d import Point3D
-from extensions.schemes.hilbert.linear import LinearHilbert
+from extensions.schemes.hilbert.linear_hilbert import LinearHilbert
 from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
 from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
 from extensions.util.benchmark.xlsx_util import XLSXUtil

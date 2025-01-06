@@ -16,7 +16,7 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-for d in $(seq 6 10); do
+for d in $(seq 6 6); do
   python3 -m extensions.util.benchmark.cli \
     --scheme "$SCHEME" \
     --dataset-name dense_2d \

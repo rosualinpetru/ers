@@ -13,7 +13,7 @@ from ers.schemes.tdag_src import TdagSRC
 from ers.schemes.tdag_src_3d import TdagSRC3D
 from ers.structures.point import Point
 from ers.structures.point_3d import Point3D
-from extensions.schemes.hilbert.linear import LinearHilbert
+from extensions.schemes.hilbert.linear_hilbert import LinearHilbert
 from extensions.schemes.hilbert.range_brc import RangeBRCHilbert
 from extensions.schemes.hilbert.tdag_src import TdagSRCHilbert
 from extensions.util.benchmark.benchmark import run_benchmark
