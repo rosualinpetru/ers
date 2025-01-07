@@ -27,7 +27,7 @@ def compress_file(input_file: str, output_file: str):
             shutil.copyfileobj(f_in, f_out)
 
 
-def map_location_to_dataset_2d(dataset: Dict[Tuple[float, float], List[bytes]], dimension_bits: int) -> Dict[Tuple[int, int], List[bytes]]:
+def map_location_to_dataset_2d(dataset: Dict[Tuple[float, float], List[bytes]], domain_size: int) -> Dict[Tuple[int, int], List[bytes]]:
     # Extract latitudes and longitudes from the dataset keys
     latitudes = [point[0] for point in dataset.keys()]
     longitudes = [point[1] for point in dataset.keys()]
@@ -42,7 +42,7 @@ def map_location_to_dataset_2d(dataset: Dict[Tuple[float, float], List[bytes]], 
         return round(normalized * (scale_max - 1))
 
     # Map each point and store collisions in a dictionary
-    grid_size = 2 ** dimension_bits
+    grid_size = 2 ** domain_size
     point_to_nodes = defaultdict(list)
 
     for (lat, lon), node_ids in dataset.items():
@@ -72,7 +72,7 @@ def plot_dataset_2d(dataset: Dict[Tuple[int, int], List[bytes]]):
 ################################################################################################################
 
 # Dimension should be in [0, 15] as increasing the scale beyond brings no difference.
-def generate_cali(dimension_bits: int, records_limit: int, raw_data_file: str = './data/cali.txt.gz') -> Dict[Tuple[int, int], List[bytes]]:
+def generate_cali(domain_size: int, records_limit: int, raw_data_file: str = './data/cali.txt.gz') -> Dict[Tuple[int, int], List[bytes]]:
     all_records = []
 
     with gzip.open(raw_data_file, 'rt') as f_in:
@@ -95,21 +95,21 @@ def generate_cali(dimension_bits: int, records_limit: int, raw_data_file: str = 
     for latitude, longitude, node_id in all_records:
         dataset[(latitude, longitude)].append(bytes(str(node_id), 'utf-8'))
 
-    return map_location_to_dataset_2d(dict(dataset), dimension_bits)
+    return map_location_to_dataset_2d(dict(dataset), domain_size)
 
 
 # The dataset was adapted to match the same format as Cali. Precisely, a unique
 # id is assigned for each check-in-time.
 # Dimension should be in [0, 42] as increasing the scale beyond brings no difference.
-def generate_gowalla(dimension_bits: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
-    return generate_cali(dimension_bits, records_limit, './data/gowalla.txt.gz')
+def generate_gowalla(domain_size: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
+    return generate_cali(domain_size, records_limit, './data/gowalla.txt.gz')
 
 
 # The dataset was adapted to match the same format as Cali. Precisely, a unique
 # id is assigned for each latitude-longitude pair.
 # Dimension should be in [0, 14] as increasing the scale beyond brings no difference.
-def generate_spitz(dimension_bits: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
-    return generate_cali(dimension_bits, records_limit, './data/spitz.txt.gz')
+def generate_spitz(domain_size: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
+    return generate_cali(domain_size, records_limit, './data/spitz.txt.gz')
 
 
 ################################################################################################################
@@ -138,11 +138,11 @@ def generate_nh_64() -> Dict[Tuple[int, int, int], List[bytes]]:
 # GENERATORS - Programmatic
 ################################################################################################################
 
-def generate_dense_database_2d(dimension_bits: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
+def generate_dense_database_2d(domain_size: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
     if records_limit <= 0:
         return {}
 
-    max_possible_records = (2 ** dimension_bits) * (2 ** dimension_bits)
+    max_possible_records = (2 ** domain_size) * (2 ** domain_size)
     if records_limit >= max_possible_records:
         step = 1
     else:
@@ -151,7 +151,7 @@ def generate_dense_database_2d(dimension_bits: int, records_limit: int) -> Dict[
     dataset = defaultdict(list)
     i = 0
     count = 0
-    for x, y in itertools.product(range(2 ** dimension_bits), range(2 ** dimension_bits)):
+    for x, y in itertools.product(range(2 ** domain_size), range(2 ** domain_size)):
         if i % step == 0:
             dataset[(x, y)].append(bytes(str(i), 'utf-8'))
             count += 1
@@ -162,12 +162,12 @@ def generate_dense_database_2d(dimension_bits: int, records_limit: int) -> Dict[
     return dict(dataset)
 
 
-def generate_random_database_2d(dimension_bits: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
+def generate_random_database_2d(domain_size: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
     dataset = defaultdict(list)
     i = 1
 
     for index in range(records_limit):
-        (x, y) = secrets.randbelow(2 ** dimension_bits), secrets.randbelow(2 ** dimension_bits)
+        (x, y) = secrets.randbelow(2 ** domain_size), secrets.randbelow(2 ** domain_size)
         dataset[(x, y)].append(bytes(str(i), 'utf-8'))
         i = i + 1
 

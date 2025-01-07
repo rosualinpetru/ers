@@ -15,8 +15,11 @@ class HilbertScheme(EMM):
 
         self.encrypted_db = None
 
-    def _hilbert_plaintext_mm(self, plaintext_mm: Dict[Point, List[bytes]]):
-        return {Point([self.hc.distance_from_point(p)]): plaintext_mm[p] for p in plaintext_mm.keys()}
+    def _hilbert_plaintext_mm(self, plaintext_mm: Dict[Point, List[bytes]]) -> Dict[int, List[bytes]]:
+        for p in plaintext_mm.keys():
+            assert p.dimensions() == self.dimensions
+
+        return {self.hc.distance_from_point(p): plaintext_mm[p] for p in plaintext_mm.keys()}
 
     def search(self, trapdoors: Set[bytes]) -> Set[bytes]:
         results = set()

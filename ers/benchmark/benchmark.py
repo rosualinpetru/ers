@@ -7,78 +7,67 @@ from typing import Dict
 
 from tqdm import tqdm
 
-from ers.schemes.common.emm import EMMEngine
-from ers.schemes.hilbert.linear_hilbert import LinearHilbert2D
-from ers.schemes.linear import Linear3D, Linear2D
-from ers.schemes.qdag_src import QdagSRC
-from ers.schemes.qdag_src_3d import QdagSRC3D
-from ers.schemes.quad_brc import QuadBRC
-from ers.schemes.quad_brc_3d import QuadBRC3D
-from ers.schemes.range_brc import RangeBRC
-from ers.schemes.range_brc_3d import RangeBRC3D
-from ers.schemes.tdag_src import TdagSRC
-from ers.schemes.tdag_src_3d import TdagSRC3D
-from ers.structures.point import Point
-from ers.structures.point_3d import Point3D
-from ers.benchmark.util.xlsx_util import XLSXUtil
 from ers.benchmark.util.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
+from ers.benchmark.util.xlsx_util import XLSXUtil
+from ers.schemes.common.emm import EMMEngine
+from ers.schemes.hilbert.linear_hilbert import LinearHilbert
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
-from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
+from ers.schemes.linear import Linear
+from ers.schemes.range_brc import RangeBRC
+from ers.structures.hyperrange import HyperRange
 
 BUCK_SIZE = 10
 
 
 def compute_precision(scheme):
-    if isinstance(scheme, Linear2D) or isinstance(scheme, Linear3D):
+    if isinstance(scheme, Linear):
         return False
 
-    if isinstance(scheme, QuadBRC) or isinstance(scheme, QuadBRC3D):
+    # if isinstance(scheme, QuadBRC):
+    #     return False
+
+    if isinstance(scheme, RangeBRC):
         return False
 
-    if isinstance(scheme, RangeBRC) or isinstance(scheme, RangeBRC3D):
-        return False
+    # if isinstance(scheme, QdagSRC):
+    #     return True
+    #
+    # if isinstance(scheme, TdagSRC):
+    #     return True
 
-    if isinstance(scheme, QdagSRC) or isinstance(scheme, QdagSRC3D):
-        return True
-
-    if isinstance(scheme, TdagSRC) or isinstance(scheme, TdagSRC3D):
-        return True
-
-    if isinstance(scheme, LinearHilbert2D):
+    if isinstance(scheme, LinearHilbert):
         return False
 
     if isinstance(scheme, RangeBRCHilbert):
         return False
 
-    if isinstance(scheme, TdagSRCHilbert):
-        return True
+    # if isinstance(scheme, TdagSRCHilbert):
+    #     return True
 
     return True
 
 
-def generate_query_bucks(queries_count: int, dimensions: int, dataset_dimension_bits: int) -> Dict[int, set]:
-    bound = 2 ** dataset_dimension_bits
+def generate_query_bucks(queries_count: int, dimensions: int, domain_size: int) -> Dict[int, set]:
+    bound = 2 ** domain_size
 
     ten_bucks = defaultdict(set)
     i = 0
-    if dimensions == 2:
-        for _ in range(queries_count):
-            c1, c2 = generate_bucket_query_2d(bound, bound, i, BUCK_SIZE)
-            p1, p2 = Point(*c1), Point(*c2)
-            ten_bucks[i * BUCK_SIZE].add((p1, p2))
-            i = (i + 1) % BUCK_SIZE
 
-    elif dimensions == 3:
-        for _ in range(queries_count):
+    for _ in range(queries_count):
+        if dimensions == 2:
+            c1, c2 = generate_bucket_query_2d(bound, bound, i, BUCK_SIZE)
+        elif dimensions == 3:
             c1, c2 = generate_bucket_query_3d(bound, bound, bound, i, BUCK_SIZE)
-            p1, p2 = Point3D(*c1), Point3D(*c2)
-            ten_bucks[i * BUCK_SIZE].add((p1, p2))
-            i = (i + 1) % BUCK_SIZE
+        else:
+            break
+
+        ten_bucks[i * BUCK_SIZE].add(HyperRange.from_coords(list(c1), list(c2)))
+        i = (i + 1) % BUCK_SIZE
 
     return dict(ten_bucks)
 
 
-def run_query(target_bucket, query, scheme, key, dimensions, dataset):
+def run_query(target_bucket, query, scheme, key, dataset):
     t0 = time.time_ns()
     trapdoors = scheme.trapdoor(key, query)
     t1 = time.time_ns()
@@ -106,21 +95,10 @@ def run_query(target_bucket, query, scheme, key, dimensions, dataset):
     resolve_time = t1 - t0
 
     if compute_precision(scheme):
-        if dimensions == 2:
-            true_positives = set().union(*(
-                dataset.get(Point(x, y), set())
-                for x in range(p1.x, p2.x + 1)
-                for y in range(p1.y, p2.y + 1)
-            ))
-        elif dimensions == 3:
-            true_positives = set().union(*(
-                dataset.get(Point3D(x, y, z), set())
-                for x in range(p1.x, p2.x + 1)
-                for y in range(p1.y, p2.y + 1)
-                for z in range(p1.z, p2.z + 1)
-            ))
-        else:
-            raise ValueError("Unsupported dimensions: only 2D and 3D are supported.")
+        true_positives = set().union(*(
+            dataset.get(p, set())
+            for p in query.points()
+        ))
 
         if not true_positives.issubset(all_positives):
             print("The scheme records false negatives...")
@@ -146,15 +124,14 @@ def run_query_with_params(args):
     return run_query(*args)
 
 
-def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_count, dataset_dimension_bits):
-    bound = 2 ** dataset_dimension_bits
+def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_count, domain_size):
     xlsx_util = XLSXUtil(report_name)
 
     #############################################################################
     ### Building index
     #############################################################################
     print("Building index...")
-    scheme = scheme_constructor(EMMEngine(dimensions * [bound]))
+    scheme = scheme_constructor(EMMEngine(dimensions * [domain_size], dimensions), dimensions)
     key = scheme.setup(16)
 
     t0 = time.time_ns()
@@ -188,13 +165,13 @@ def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_
     precision_map = defaultdict(list)
 
     ### Queries
-    ten_bucks = generate_query_bucks(queries_count, dimensions, dataset_dimension_bits)
+    ten_bucks = generate_query_bucks(queries_count, dimensions, domain_size)
 
     with ProcessPoolExecutor() as executor:
         tasks = []
         for target_bucket in range(0, 99, BUCK_SIZE):
-            for (p1, p2) in ten_bucks[target_bucket]:
-                tasks.append((target_bucket, p1, p2, scheme, key, dimensions, dataset))
+            for q in ten_bucks[target_bucket]:
+                tasks.append((target_bucket, q, scheme, key, dataset))
 
         results = list(tqdm(executor.map(run_query_with_params, tasks), total=len(tasks), desc="Running queries"))
 

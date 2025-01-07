@@ -15,10 +15,10 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
 fi
 
 for d in $(seq 6 6); do
-  python3 -m extensions.util.benchmark.cli \
+  python3 -m ers.benchmark.cli \
     --scheme "$SCHEME" \
-    --dataset-name gowalla \
-    --dataset-dimension-bits $d \
+    --dataset gowalla \
+    --domain-size $d \
     --records-limit 1000000 \
     --queries-count $QUERIES_COUNT
 done

@@ -5,10 +5,10 @@ from tqdm import tqdm
 
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.hilbert.hilbert import HilbertScheme
-from ers.structures.point_3d import Point3D
-from ers.structures.hypertree import RangeTree, HyperTree
 from ers.structures.hyperrange import HyperRange
+from ers.structures.hypertree import HyperTree
 from ers.structures.point import Point
+
 
 class RangeBRCHilbert(HilbertScheme):
     def __init__(self, emm_engine: EMMEngine, dimensions):
@@ -22,8 +22,8 @@ class RangeBRCHilbert(HilbertScheme):
         self.tree = HyperTree.initialize_tree(tree_height, 1)
 
         modified_db = defaultdict(list)
-        for index, vals in tqdm(hilbert_plaintext_mm.items()):
-            for hyperrange in self.tree.rng.descend(Point([index])):
+        for distance, vals in tqdm(hilbert_plaintext_mm.items()):
+            for hyperrange in self.tree.rng.descend(Point([distance])):
                 label_bytes = hyperrange.to_bytes()
                 modified_db[label_bytes].extend(vals)
 
@@ -34,9 +34,9 @@ class RangeBRCHilbert(HilbertScheme):
 
         trapdoors = set()
 
-        for r in ranges:
-            for label in self.tree.get_brc_range_cover(r):
-                label_bytes = HyperRange.from_coords([label[0]], [label[1]]).to_bytes()
+        for (start_distance, end_distance) in ranges:
+            for hyperrange in self.tree.get_brc_range_cover(HyperRange.from_coords([start_distance], [end_distance])):
+                label_bytes = hyperrange.to_bytes()
                 trapdoors.add(self.emm_engine.trapdoor(key, label_bytes))
 
         return trapdoors

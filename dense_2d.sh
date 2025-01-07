@@ -16,11 +16,11 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-for d in $(seq 6 6); do
-  python3 -m ers.util.benchmark.cli \
+for d in $(seq 7 7); do
+  python3 -m ers.benchmark.cli \
     --scheme "$SCHEME" \
-    --dataset-name dense_2d \
-    --dataset-dimension-bits $d \
+    --dataset dense_2d \
+    --domain-size $d \
     --records-limit 1000000 \
     --queries-count $QUERIES_COUNT
 done

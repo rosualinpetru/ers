@@ -14,9 +14,9 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-python3 -m extensions.util.benchmark.cli \
+python3 -m ers.benchmark.cli \
   --scheme "$SCHEME" \
-  --dataset-name nh_64 \
-  --dataset-dimension-bits 6 \
+  --dataset nh_64 \
+  --domain-size 6 \
   --records-limit 1000000 \
   --queries-count $QUERIES_COUNT

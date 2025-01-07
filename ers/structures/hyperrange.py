@@ -109,7 +109,7 @@ class HyperRange:
     def volume(self) -> int:
         p = 1
 
-        for i in self.dimensions:
+        for i in range(self.dimensions):
             p = p * (self.end[i] - self.start[i])
 
         return p

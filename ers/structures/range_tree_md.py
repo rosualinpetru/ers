@@ -16,7 +16,7 @@ class RangeTreeMD:
 
         parents = []
 
-        descended_paths = [self.trees[d].rng.descend(Point(point[d])) for d in range(self.dimensions)]
+        descended_paths = [self.trees[d].rng.descend(Point([point[d]])) for d in range(self.dimensions)]
 
         # all are of dimension 1
         for hyperrng_product in product(*descended_paths):

@@ -1,33 +1,34 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from ers.benchmark.util.dataset_generator import generate_dense_database_2d
+from ers.benchmark.util.query_generator import generate_bucket_query_2d
 from ers.schemes.common.emm_engine import EMMEngine
-from ers.schemes.hilbert.linear_hilbert import LinearHilbert2D
-from ers.util.serialization import BytesToObject
+from ers.schemes.hilbert.linear_hilbert import LinearHilbert
+from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
 from ers.structures.hyperrange import HyperRange
 from ers.structures.point import Point
-from ers.benchmark.util.dataset_generator import generate_dense_database_2d
-from ers.benchmark.util.query_generator import generate_random_query_2d
+from ers.util.serialization.serialization import BytesToObject
 
 if __name__ == "__main__":
     # VARIABLES
     SEC_PARAM = 16
 
-    SCHEME = LinearHilbert2D
+    SCHEME = RangeBRCHilbert
     MERGE_GAP_TOLERANCE = 1
     SCALING_PERCENTAGE = 0
 
-    DIMENSION_SIZE = 3
+    DOMAIN_BITS = 4
 
-    plaintext_mm_raw = generate_dense_database_2d(DIMENSION_SIZE, 1000000)
+    plaintext_mm_raw = generate_dense_database_2d(DOMAIN_BITS, 1000000)
     plaintext_mm = {Point(list(t)): plaintext_mm_raw[t] for t in plaintext_mm_raw}
 
     # HILBERT INIT
-    hc = SCHEME(EMMEngine([2 ** DIMENSION_SIZE, 2 ** DIMENSION_SIZE]))
+    hc = SCHEME(EMMEngine([DOMAIN_BITS, DOMAIN_BITS], 2), 2)
     key = hc.setup(SEC_PARAM)
     hc.build_index(key, plaintext_mm)
 
-    (c1, c2) = generate_random_query_2d(2 ** DIMENSION_SIZE, 2 ** DIMENSION_SIZE)
+    (c1, c2) = generate_bucket_query_2d(2 ** DOMAIN_BITS, 2 ** DOMAIN_BITS, 2, 10)
     query = HyperRange.from_coords(list(c1), list(c2))
 
     search_tokens = hc.trapdoor(key, query, MERGE_GAP_TOLERANCE)
@@ -61,7 +62,7 @@ if __name__ == "__main__":
         color = point_color(p)
 
         plt.scatter(x, y, color=color)
-        plt.text(x + 0.1, y + 0.1, '\n'.join([BytesToObject(s).__str__() for s in plaintext_mm[p]]), fontsize=14, color=color)
+        plt.text(x + 0.1, y + 0.1, "{"+'\n'.join([BytesToObject(s).__str__()+"}" for s in plaintext_mm[p]]), fontsize=12, color=color)
         plt.text(x - 0.2, y - 0.2, str(idx), fontsize=14, color=color)
 
         if idx == num_points - 1:
@@ -94,7 +95,7 @@ if __name__ == "__main__":
         plt.fill([x1, x2, x2, x1], [y1, y1, y2, y2], color=colour, alpha=0.1, label=label)
 
 
-    plot_rect(HyperRange(Point([0, 0]), Point([2 ** DIMENSION_SIZE - 1, 2 ** DIMENSION_SIZE - 1])), "yellow", "Search Space")
+    plot_rect(HyperRange(Point([0, 0]), Point([2 ** DOMAIN_BITS - 1, 2 ** DOMAIN_BITS - 1])), "yellow", "Search Space")
     plot_rect(query, "green", "Query")
 
     plt.title(f"Hilbert Curve")
