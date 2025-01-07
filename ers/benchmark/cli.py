@@ -14,9 +14,9 @@ from ers.schemes.range_brc import RangeBRC
 from ers.schemes.range_brc_3d import RangeBRC3D
 from ers.schemes.tdag_src import TdagSRC
 from ers.schemes.tdag_src_3d import TdagSRC3D
-from ers.structures.pointnd import PointND
-from ers.util.benchmark.benchmark import run_benchmark
-from ers.util.generator.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d
+from ers.structures.point import Point
+from ers.benchmark.benchmark import run_benchmark
+from ers.benchmark.util.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d
 
 #############################################################################
 ### SCHEME DICTS
@@ -64,7 +64,7 @@ def get_dataset_2d(dataset_name: str, dimension_bits: int, records_limit: int):
         case _:
             raise ValueError(f"Unknown 2D dataset: {dataset_name}. Should be: cali, spitz, gowalla, dense_2d, random_2d.")
 
-    dataset = {PointND(list(t)): dataset[t] for t in dataset}
+    dataset = {Point(list(t)): dataset[t] for t in dataset}
 
     return dataset
 
@@ -76,7 +76,7 @@ def get_dataset_3d(dataset_name: str, dimension_bits: int, records_limit: int):
         case _:
             raise ValueError(f"Unknown 3D dataset: {dataset_name}. Should be: nh_64.")
 
-    dataset = {PointND(list(t)): dataset[t] for t in dataset}
+    dataset = {Point(list(t)): dataset[t] for t in dataset}
 
     return dataset
 

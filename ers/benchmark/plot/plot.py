@@ -4,10 +4,10 @@ import numpy as np
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.hilbert.linear_hilbert import LinearHilbert2D
 from ers.util.serialization import BytesToObject
-from ers.structures.hyperrect import HyperRect
-from ers.structures.pointnd import PointND
-from ers.util.generator.dataset_generator import generate_dense_database_2d
-from ers.util.generator.query_generator import generate_random_query_2d
+from ers.structures.hyperrange import HyperRange
+from ers.structures.point import Point
+from ers.benchmark.util.dataset_generator import generate_dense_database_2d
+from ers.benchmark.util.query_generator import generate_random_query_2d
 
 if __name__ == "__main__":
     # VARIABLES
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     DIMENSION_SIZE = 3
 
     plaintext_mm_raw = generate_dense_database_2d(DIMENSION_SIZE, 1000000)
-    plaintext_mm = {PointND(list(t)): plaintext_mm_raw[t] for t in plaintext_mm_raw}
+    plaintext_mm = {Point(list(t)): plaintext_mm_raw[t] for t in plaintext_mm_raw}
 
     # HILBERT INIT
     hc = SCHEME(EMMEngine([2 ** DIMENSION_SIZE, 2 ** DIMENSION_SIZE]))
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     hc.build_index(key, plaintext_mm)
 
     (c1, c2) = generate_random_query_2d(2 ** DIMENSION_SIZE, 2 ** DIMENSION_SIZE)
-    query = HyperRect.from_coords(list(c1), list(c2))
+    query = HyperRange.from_coords(list(c1), list(c2))
 
     search_tokens = hc.trapdoor(key, query, MERGE_GAP_TOLERANCE)
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(256, 256))
 
 
-    def point_color(point: PointND):
+    def point_color(point: Point):
         if query.contains_point(point):
             if resolved_results.isdisjoint(plaintext_mm[point]):
                 return "orange"
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         plt.plot([x, next_point[0]], [y, next_point[1]], color=segment_color)
 
 
-    def plot_rect(q: HyperRect, colour: str, label: str):
+    def plot_rect(q: HyperRange, colour: str, label: str):
         x1 = q.start[0] - 0.1
         y1 = q.start[1] - 0.1
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
         plt.fill([x1, x2, x2, x1], [y1, y1, y2, y2], color=colour, alpha=0.1, label=label)
 
 
-    plot_rect(HyperRect(PointND([0, 0]), PointND([2 ** DIMENSION_SIZE - 1, 2 ** DIMENSION_SIZE - 1])), "yellow", "Search Space")
+    plot_rect(HyperRange(Point([0, 0]), Point([2 ** DIMENSION_SIZE - 1, 2 ** DIMENSION_SIZE - 1])), "yellow", "Search Space")
     plot_rect(query, "green", "Query")
 
     plt.title(f"Hilbert Curve")

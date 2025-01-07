@@ -17,8 +17,12 @@ DO_NOT_ENCRYPT = False
 
 
 class EMMEngine:
-    def __init__(self, max_dimension_values):
-        self.MAX_VALS = max_dimension_values
+    def __init__(self, dimension_bits: List[int], dimensions: int):
+        self.DIMENSIONS_BITS = dimension_bits
+        self.dimensions = dimensions
+
+        if len(dimension_bits) != dimensions:
+            raise ValueError("Specified dimensions bits do to not correspond to the number of dimensions")
 
     def setup(self, security_parameter: int) -> bytes:
         return SecureRandom(security_parameter)

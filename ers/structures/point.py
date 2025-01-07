@@ -1,66 +1,53 @@
-##
-## Copyright 2022 Zachary Espiritu and Evangelia Anna Markatou and
-##                Francesca Falzon and Roberto Tamassia and William Schor
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 import functools
+from typing import List
 
-from ..util import serialization
+from ers.util.serialization import serialization
 
 
 @functools.total_ordering
 class Point:
-    """
-    A point representing an integer coordinate in a two-dimensional space.
-    """
+    def __init__(self, coords: List[int]):
+        self.__coords = coords
+        self.__dimensions = len(coords)
 
-    def __init__(self, x: int, y: int):
-        self.x = int(x)
-        self.y = int(y)
+        if len(self.__coords) == 0:
+            raise ValueError("Cannot create zero-dimensional point")
 
     def __eq__(self, other):
         if not isinstance(other, Point):
             return False
-        return self.x == other.x and self.y == other.y
+        return self.__dimensions == other.__dimensions and self.__coords == other.__coords
 
     def __lt__(self, other):
         if not isinstance(other, Point):
             return NotImplemented
-        return self.x < other.x and self.y < other.y
+
+        if self.__dimensions != other.__dimensions:
+            return NotImplemented
+
+        for v1, v2 in zip(self.__coords, other.__coords):
+            if v1 >= v2:
+                return False
+
+        return True
 
     def __hash__(self):
-        return hash((self.x, self.y))
+        return hash(tuple(self.__coords))
 
     def __bytes__(self):
-        return serialization.ObjectToBytes([self.x, self.y])
+        return serialization.ObjectToBytes(self.__coords)
 
     def __str__(self):
-        return "Point(" + str(self.x) + ", " + str(self.y) + ")"
+        return "Point(" + str(self.__coords) + ")"
 
     def __repr__(self):
         return str(self)
 
-    @classmethod
-    def from_bytes(self, b: bytes):
-        x, y = serialization.BytesToObject(b)
-        return self(x, y)
+    def __getitem__(self, index):
+        return self.__coords[index]
 
-    def contained_by(self, bottom, top):
-        return (
-            self.x >= bottom.x
-            and self.y >= bottom.y
-            and self.x <= top.x
-            and self.y <= top.y
-        )
+    def dimensions(self):
+        return self.__dimensions
+
+    def coords(self):
+        return self.__coords[:]

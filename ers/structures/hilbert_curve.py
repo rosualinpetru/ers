@@ -2,8 +2,8 @@ from typing import List, Tuple, Iterable
 
 from hilbertcurve.hilbertcurve import HilbertCurve as Hc
 
-from ers.structures.hyperrect import HyperRect
-from ers.structures.pointnd import PointND
+from ers.structures.hyperrange import HyperRange
+from ers.structures.point import Point
 
 
 class HilbertCurve:
@@ -12,23 +12,23 @@ class HilbertCurve:
         self.order = order  # edge bits
         self.dimensions = dimensions
 
-    def distance_from_point(self, point: PointND) -> int:
-        return self.hc.distance_from_point(point.coords)
+    def distance_from_point(self, point: Point) -> int:
+        return self.hc.distance_from_point(point.coords())
 
-    def point_from_distance(self, distance: int) -> PointND:
-        return PointND(list(self.hc.point_from_distance(distance)))
+    def point_from_distance(self, distance: int) -> Point:
+        return Point(list(self.hc.point_from_distance(distance)))
 
-    def distances_from_points(self, points: Iterable[PointND]) -> Iterable[int]:
+    def distances_from_points(self, points: Iterable[Point]) -> Iterable[int]:
         return [self.distance_from_point(point) for point in points]
 
-    def points_from_distances(self, distances: Iterable[int]) -> Iterable[PointND]:
+    def points_from_distances(self, distances: Iterable[int]) -> Iterable[Point]:
         return [self.point_from_distance(distance) for distance in distances]
 
-    def best_range_cover(self, hyper_rect: HyperRect):
+    def best_range_cover(self, hyper_rect: HyperRange):
         return self.best_range_cover_with_merging(hyper_rect, 0)
 
-    def best_range_cover_with_merging(self, hyper_rect: HyperRect, segment_gap_tolerance: float) -> List[Tuple[int, int]]:
-        perimeter_points = hyper_rect.perimeter_points()
+    def best_range_cover_with_merging(self, hyper_rect: HyperRange, segment_gap_tolerance: float) -> List[Tuple[int, int]]:
+        perimeter_points = hyper_rect.boundary_points()
         perimeter_distances = sorted(self.distances_from_points(perimeter_points))
 
         segment_gap_threshold = hyper_rect.volume() * segment_gap_tolerance
@@ -62,8 +62,8 @@ class HilbertCurve:
 
         return ranges
 
-    def single_range_cover(self, hyper_rect: HyperRect) -> Tuple[int, int]:
-        perimeter_points = hyper_rect.perimeter_points()
+    def single_range_cover(self, hyper_rect: HyperRange) -> Tuple[int, int]:
+        perimeter_points = hyper_rect.boundary_points()
         perimeter_distances = sorted(self.distances_from_points(perimeter_points))
 
         return min(perimeter_distances), max(perimeter_distances)

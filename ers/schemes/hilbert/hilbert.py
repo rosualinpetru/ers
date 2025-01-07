@@ -1,24 +1,22 @@
-import math
 from typing import Set, List, Dict
 
 from ers.schemes.common.emm import EMM
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.structures.hilbert_curve import HilbertCurve
-from ers.structures.pointnd import PointND
+from ers.structures.point import Point
 
 
 class HilbertScheme(EMM):
     def __init__(self, emm_engine: EMMEngine, dimensions: int):
-        super().__init__(emm_engine)
+        super().__init__(emm_engine, dimensions)
 
-        self.order = math.ceil(math.log2(max(emm_engine.MAX_VALS)))
-        self.dimensions = dimensions
+        self.order = max(emm_engine.DIMENSIONS_BITS)
         self.hc = HilbertCurve(self.order, self.dimensions)
 
         self.encrypted_db = None
 
-    def _hilbert_plaintext_mm(self, plaintext_mm: Dict[PointND, List[bytes]]):
-        return {PointND([self.hc.distance_from_point(p)]): plaintext_mm[p] for p in plaintext_mm.keys()}
+    def _hilbert_plaintext_mm(self, plaintext_mm: Dict[Point, List[bytes]]):
+        return {Point([self.hc.distance_from_point(p)]): plaintext_mm[p] for p in plaintext_mm.keys()}
 
     def search(self, trapdoors: Set[bytes]) -> Set[bytes]:
         results = set()

@@ -5,8 +5,8 @@ from tqdm import tqdm
 
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.hilbert.hilbert import HilbertScheme
-from ers.structures.hyperrect import HyperRect
-from ers.structures.pointnd import PointND
+from ers.structures.hyperrange import HyperRange
+from ers.structures.point import Point
 from ers.structures.tdag import Tdag
 
 
@@ -19,7 +19,7 @@ class TdagSRCHilbert(HilbertScheme):
         super().__init__(emm_engine, dimensions)
         self.tdag = None
 
-    def build_index(self, key: bytes, plaintext_mm: Dict[PointND, List[bytes]]):
+    def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
         hilbert_plaintext_mm = self._hilbert_plaintext_mm(plaintext_mm)
 
         max_hilbert_index = 2 ** (self.dimensions * self.order) - 1
@@ -31,16 +31,16 @@ class TdagSRCHilbert(HilbertScheme):
         for index, vals in tqdm(hilbert_plaintext_mm.items()):
             roots = _descend_tree(index, (0, max_hilbert_index))
             for label in roots:
-                label_bytes = HyperRect.from_coords([label[0]], [label[1]]).to_bytes()
+                label_bytes = HyperRange.from_coords([label[0]], [label[1]]).to_bytes()
                 modified_db[label_bytes].extend(vals)
 
         self.encrypted_db = self.emm_engine.build_index(key, modified_db)
 
-    def trapdoor(self, key: bytes, query: HyperRect) -> Set[bytes]:
+    def trapdoor(self, key: bytes, query: HyperRange) -> Set[bytes]:
         trapdoors = set()
         hilbert_range = self.hc.single_range_cover(query)
         cover = self.tdag.get_single_range_cover(hilbert_range)
-        label_bytes = HyperRect.from_coords([cover[0]], [cover[1]]).to_bytes()
+        label_bytes = HyperRange.from_coords([cover[0]], [cover[1]]).to_bytes()
         trapdoors.add(self.emm_engine.trapdoor(key, label_bytes))
         return trapdoors
 

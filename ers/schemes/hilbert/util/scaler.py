@@ -1,16 +1,15 @@
 from typing import List, Tuple
 
-from ers.structures.hyperrect import HyperRect
-from ers.structures.pointnd import PointND
+from ers.structures.hyperrange import HyperRange
 
 
 class Scaler:
-    def __init__(self, dimension_bits: int):
-        self.dimension_bits = dimension_bits
+    def __init__(self, bits: int):
+        self.bits = bits
 
-    def downscale(self, bits: int, query: HyperRect) -> HyperRect:
-        p1 = query.start.coords
-        p2 = query.end.coords
+    def downscale(self, bits: int, query: HyperRange) -> HyperRange:
+        p1 = query.start.coords()
+        p2 = query.end.coords()
 
         if bits > 0:
             def downscale_point(p: List[int]):
@@ -24,7 +23,7 @@ class Scaler:
                 p1 = downscale_point(p1)
                 p2 = downscale_point(p2)
 
-            reduced_max_coordinate = 1 << (self.dimension_bits - bits)
+            reduced_max_coordinate = 1 << (self.bits - bits)
 
             # extend query by 1 on each dimension
             for i, v in enumerate(p1):
@@ -33,9 +32,10 @@ class Scaler:
             for i, v in enumerate(p2):
                 p2[i] = min(reduced_max_coordinate, v + 1)
 
-        return HyperRect.from_coords(p1, p2)
+        return HyperRange.from_coords(p1, p2)
 
-    def _hilbert_upscale(self, bits: int, ranges: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    @staticmethod
+    def _hilbert_upscale(bits: int, ranges: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
         upscale_factor = bits * 2
         upscaled_ranges = []
 

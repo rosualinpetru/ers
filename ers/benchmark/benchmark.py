@@ -20,8 +20,8 @@ from ers.schemes.tdag_src import TdagSRC
 from ers.schemes.tdag_src_3d import TdagSRC3D
 from ers.structures.point import Point
 from ers.structures.point_3d import Point3D
-from ers.util.benchmark.xlsx_util import XLSXUtil
-from ers.util.generator.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
+from ers.benchmark.util.xlsx_util import XLSXUtil
+from ers.benchmark.util.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
 from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
 
