@@ -10,8 +10,8 @@ from ers.structures.point import Point
 
 
 class Linear(EMM):
-    def __init__(self, emm_engine: EMMEngine, dimensions: int):
-        super().__init__(emm_engine, dimensions)
+    def __init__(self, emm_engine: EMMEngine):
+        super().__init__(emm_engine)
         self.encrypted_db = None
 
     def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):

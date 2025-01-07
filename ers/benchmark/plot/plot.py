@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # VARIABLES
     SEC_PARAM = 16
 
-    SCHEME = RangeBRCHilbert
+    SCHEME = LinearHilbert
     MERGE_GAP_TOLERANCE = 1
     SCALING_PERCENTAGE = 0
 
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     plaintext_mm = {Point(list(t)): plaintext_mm_raw[t] for t in plaintext_mm_raw}
 
     # HILBERT INIT
-    hc = SCHEME(EMMEngine([DOMAIN_BITS, DOMAIN_BITS], 2), 2)
+    hc = SCHEME(EMMEngine([DOMAIN_BITS, DOMAIN_BITS], 2))
     key = hc.setup(SEC_PARAM)
     hc.build_index(key, plaintext_mm)
 

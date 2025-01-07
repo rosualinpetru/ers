@@ -15,8 +15,8 @@ from ers.structures.tdag import Tdag
 ###################################################################################################
 
 class TdagSRCHilbert(HilbertScheme):
-    def __init__(self, emm_engine: EMMEngine, dimensions: int):
-        super().__init__(emm_engine, dimensions)
+    def __init__(self, emm_engine: EMMEngine):
+        super().__init__(emm_engine)
         self.tdag = None
 
     def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):

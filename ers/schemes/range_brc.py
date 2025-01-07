@@ -11,8 +11,8 @@ from ..structures.range_tree_md import RangeTreeMD
 
 
 class RangeBRC(EMM):
-    def __init__(self, emm_engine: EMMEngine, dimensions: int):
-        super().__init__(emm_engine, dimensions)
+    def __init__(self, emm_engine: EMMEngine):
+        super().__init__(emm_engine)
         self.range_tree_md = None
         self.encrypted_db = None
 

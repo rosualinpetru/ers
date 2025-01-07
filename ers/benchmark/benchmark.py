@@ -131,7 +131,7 @@ def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_
     ### Building index
     #############################################################################
     print("Building index...")
-    scheme = scheme_constructor(EMMEngine(dimensions * [domain_size], dimensions), dimensions)
+    scheme = scheme_constructor(EMMEngine(dimensions * [domain_size], dimensions))
     key = scheme.setup(16)
 
     t0 = time.time_ns()

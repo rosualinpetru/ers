@@ -7,8 +7,8 @@ from ers.structures.point import Point
 
 
 class HilbertScheme(EMM):
-    def __init__(self, emm_engine: EMMEngine, dimensions: int):
-        super().__init__(emm_engine, dimensions)
+    def __init__(self, emm_engine: EMMEngine):
+        super().__init__(emm_engine)
 
         self.order = max(emm_engine.DIMENSIONS_BITS)
         self.hc = HilbertCurve(self.order, self.dimensions)
