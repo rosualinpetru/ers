@@ -6,6 +6,7 @@ from ers.benchmark.util.query_generator import generate_bucket_query_2d
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.hilbert.linear_hilbert import LinearHilbert
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
+from ers.schemes.range_brc import RangeBRC
 from ers.structures.hyperrange import HyperRange
 from ers.structures.point import Point
 from ers.util.serialization.serialization import BytesToObject
@@ -14,8 +15,8 @@ if __name__ == "__main__":
     # VARIABLES
     SEC_PARAM = 16
 
-    SCHEME = LinearHilbert
-    MERGE_GAP_TOLERANCE = 1
+    SCHEME = RangeBRCHilbert
+    MERGE_GAP_TOLERANCE = 0
     SCALING_PERCENTAGE = 0
 
     DOMAIN_BITS = 4

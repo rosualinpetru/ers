@@ -2,8 +2,8 @@ import functools
 from itertools import product
 from typing import List
 
-from ers.util.serialization.serialization import ObjectToBytes, BytesToObject
 from ers.structures.point import Point
+from ers.util.serialization.serialization import ObjectToBytes, BytesToObject
 
 
 @functools.total_ordering
@@ -26,7 +26,7 @@ class HyperRange:
         return cls(Point(start), Point(end))
 
     def __str__(self):
-        return "HyperRect[" + str(self.start) + ", " + str(self.end) + "]"
+        return "[(" + ", ".join([str(c) for c in self.start.coords()]) + "), (" + ", ".join([str(c) for c in self.end.coords()]) + ")]"
 
     def __repr__(self):
         return str(self)
@@ -110,51 +110,6 @@ class HyperRange:
         p = 1
 
         for i in range(self.dimensions):
-            p = p * (self.end[i] - self.start[i])
+            p = p * (self.end[i] - self.start[i] + 1)
 
         return p
-
-    def divide(self) -> List["HyperRange"]:
-        def helper(rng: HyperRange, current_dim: int):
-            if current_dim >= rng.dimensions:
-                return [rng]
-
-            midpoint = (rng.start[current_dim] + rng.end[current_dim]) // 2
-
-            if rng.end[current_dim] - rng.start[current_dim] < 1:
-                return helper(rng, current_dim + 1)
-
-            start_coords1 = rng.start.coords()
-            end_coords1 = rng.end.coords()
-
-            start_coords2 = rng.start.coords()
-            end_coords2 = rng.end.coords()
-
-            end_coords1[current_dim] = midpoint
-            start_coords2[current_dim] = midpoint + 1
-
-            rng1 = HyperRange.from_coords(start_coords1, end_coords1)
-            rng2 = HyperRange.from_coords(start_coords2, end_coords2)
-
-            divided_rngs1 = helper(rng1, current_dim + 1)
-            divided_rngs2 = helper(rng2, current_dim + 1)
-
-            return divided_rngs1 + divided_rngs2
-
-        return helper(self, 0)
-
-    def descend(self, point: Point) -> List["HyperRange"]:
-        assert point.dimensions() == self.dimensions
-
-        ranges = []
-
-        rng = self
-        while rng != HyperRange(point, point):
-            ranges.append(rng)
-            for c in rng.divide():
-                if point in c:
-                    rng = c
-                    break
-
-        ranges.append(HyperRange(point, point))
-        return ranges

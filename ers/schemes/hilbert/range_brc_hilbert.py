@@ -8,6 +8,7 @@ from ers.schemes.hilbert.hilbert import HilbertScheme
 from ers.structures.hyperrange import HyperRange
 from ers.structures.hypertree import HyperTree
 from ers.structures.point import Point
+from ers.util.hyperrange.uniform_split_divider import UniformSplitDivider
 
 
 class RangeBRCHilbert(HilbertScheme):
@@ -19,11 +20,11 @@ class RangeBRCHilbert(HilbertScheme):
         hilbert_plaintext_mm = self._hilbert_plaintext_mm(plaintext_mm)
 
         tree_height = self.dimensions * self.order
-        self.tree = HyperTree.initialize_tree(tree_height, 1)
+        self.tree = HyperTree.initialize_tree(HyperRange.from_coords([0], [pow(2, tree_height) - 1]), UniformSplitDivider(2))
 
         modified_db = defaultdict(list)
         for distance, vals in tqdm(hilbert_plaintext_mm.items()):
-            for hyperrange in self.tree.rng.descend(Point([distance])):
+            for hyperrange in self.tree.descend(HyperRange(Point([distance]), Point([distance]))):
                 label_bytes = hyperrange.to_bytes()
                 modified_db[label_bytes].extend(vals)
 

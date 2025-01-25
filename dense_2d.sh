@@ -16,7 +16,7 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-for d in $(seq 7 7); do
+for d in $(seq 5 5); do
   python3 -m ers.benchmark.cli \
     --scheme "$SCHEME" \
     --dataset dense_2d \

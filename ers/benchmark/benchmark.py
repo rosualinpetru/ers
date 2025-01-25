@@ -12,8 +12,10 @@ from ers.benchmark.util.xlsx_util import XLSXUtil
 from ers.schemes.common.emm import EMMEngine
 from ers.schemes.hilbert.linear_hilbert import LinearHilbert
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
+from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
 from ers.schemes.linear import Linear
 from ers.schemes.range_brc import RangeBRC
+from ers.schemes.tdag_src import TdagSRC
 from ers.structures.hyperrange import HyperRange
 
 BUCK_SIZE = 10
@@ -31,9 +33,9 @@ def compute_precision(scheme):
 
     # if isinstance(scheme, QdagSRC):
     #     return True
-    #
-    # if isinstance(scheme, TdagSRC):
-    #     return True
+
+    if isinstance(scheme, TdagSRC):
+        return True
 
     if isinstance(scheme, LinearHilbert):
         return False
@@ -41,8 +43,8 @@ def compute_precision(scheme):
     if isinstance(scheme, RangeBRCHilbert):
         return False
 
-    # if isinstance(scheme, TdagSRCHilbert):
-    #     return True
+    if isinstance(scheme, TdagSRCHilbert):
+        return True
 
     return True
 
