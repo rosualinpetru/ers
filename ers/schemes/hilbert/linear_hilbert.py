@@ -19,7 +19,7 @@ class LinearHilbert(HilbertScheme):
         modified_db = defaultdict(list)
 
         for distance, vals in tqdm(hilbert_plaintext_mm.items()):
-            label = HyperRange.from_coords([distance], [distance]).to_bytes()
+            label = HyperRange.from_point_coords([distance]).to_bytes()
             modified_db[label].extend(vals)
 
         self.encrypted_db = self.emm_engine.build_index(key, modified_db)
@@ -27,13 +27,13 @@ class LinearHilbert(HilbertScheme):
     def trapdoor(self, key: bytes, query: HyperRange, merging_tolerance: float = 0) -> Set[bytes]:
         assert query.dimensions == self.dimensions
 
-        ranges = self.hc.best_range_cover_with_merging(query, merging_tolerance)
+        ranges = self.hc.brc_with_merging(query, merging_tolerance)
 
         trapdoors = set()
 
         for (start_distance, end_distance) in ranges:
             for distance in range(start_distance, end_distance + 1):
-                label = HyperRange.from_coords([distance], [distance]).to_bytes()
+                label = HyperRange.from_point_coords([distance]).to_bytes()
                 trapdoors.add(self.emm_engine.trapdoor(key, label))
 
         return trapdoors

@@ -61,4 +61,4 @@ class CustomUniformSplitDivider(HyperRangeDivider):
 
             return results
 
-        return helper(rng, 0)
+        return helper(rng, 0) - rng

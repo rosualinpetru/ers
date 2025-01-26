@@ -24,14 +24,14 @@ class HilbertCurve:
     def points_from_distances(self, distances: Iterable[int]) -> Iterable[Point]:
         return [self.point_from_distance(distance) for distance in distances]
 
-    def best_range_cover(self, hyper_rect: HyperRange):
-        return self.best_range_cover_with_merging(hyper_rect, 0)
+    def brc(self, rng: HyperRange):
+        return self.brc_with_merging(rng, 0)
 
-    def best_range_cover_with_merging(self, hyper_rect: HyperRange, segment_gap_tolerance: float) -> List[Tuple[int, int]]:
-        perimeter_points = hyper_rect.boundary_points()
+    def brc_with_merging(self, rng: HyperRange, segment_gap_tolerance: float) -> List[Tuple[int, int]]:
+        perimeter_points = rng.boundary_points()
         perimeter_distances = sorted(self.distances_from_points(perimeter_points))
 
-        segment_gap_threshold = hyper_rect.volume() * segment_gap_tolerance
+        segment_gap_threshold = rng.volume() * segment_gap_tolerance
 
         ranges = []
         i = 0
@@ -47,7 +47,7 @@ class HilbertCurve:
 
                 next_point = self.point_from_distance(perimeter_distances[i] + 1)  # Calculate the point at the next distance
 
-                if not hyper_rect.contains_point(next_point):  # If it's outside the rectangle, check tolerance
+                if not rng.contains_point(next_point):  # If it's outside the rectangle, check tolerance
                     if perimeter_distances[i + 1] - perimeter_distances[i] >= segment_gap_threshold:
                         break  # Finalize the current range
                     else:
@@ -62,8 +62,8 @@ class HilbertCurve:
 
         return ranges
 
-    def single_range_cover(self, hyper_rect: HyperRange) -> Tuple[int, int]:
-        perimeter_points = hyper_rect.boundary_points()
+    def src(self, rng: HyperRange) -> Tuple[int, int]:
+        perimeter_points = rng.boundary_points()
         perimeter_distances = sorted(self.distances_from_points(perimeter_points))
 
         return min(perimeter_distances), max(perimeter_distances)

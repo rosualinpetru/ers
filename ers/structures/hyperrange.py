@@ -23,7 +23,24 @@ class HyperRange:
 
     @classmethod
     def from_coords(cls, start: List[int], end: List[int]):
-        return cls(Point(start), Point(end))
+        return cls(Point(start[:]), Point(end[:]))
+
+    @classmethod
+    def from_point(cls, p: Point):
+        return cls(Point(p.coords()), Point(p.coords()))
+
+    @classmethod
+    def from_point_coords(cls, coords: List[int]):
+        return cls(Point(coords[:]), Point(coords[:]))
+
+    @classmethod
+    def from_bits(cls, bits: List[int]):
+        return HyperRange.from_coords([0] * len(bits), [2 ** b - 1 for b in bits])
+
+    @classmethod
+    def from_bytes(cls, b: bytes):
+        start, end = BytesToObject(b)
+        return HyperRange(Point(start), Point(end))
 
     def __str__(self):
         return "[(" + ", ".join([str(c) for c in self.start.coords()]) + "), (" + ", ".join([str(c) for c in self.end.coords()]) + ")]"
@@ -57,11 +74,6 @@ class HyperRange:
 
     def to_bytes(self) -> bytes:
         return bytes(self)
-
-    @classmethod
-    def from_bytes(cls, b: bytes) -> "HyperRange":
-        start, end = BytesToObject(b)
-        return HyperRange(Point(start), Point(end))
 
     def contains_point(self, point: Point) -> bool:
         for i in range(self.dimensions):
