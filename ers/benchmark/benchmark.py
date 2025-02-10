@@ -14,6 +14,8 @@ from ers.schemes.hilbert.linear_hilbert import LinearHilbert
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
 from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
 from ers.schemes.linear import Linear
+from ers.schemes.quad_brc import QuadBRC
+from ers.schemes.quad_src import QuadSRC
 from ers.schemes.range_brc import RangeBRC
 from ers.schemes.tdag_src import TdagSRC
 from ers.structures.hyperrange import HyperRange
@@ -25,14 +27,14 @@ def compute_precision(scheme):
     if isinstance(scheme, Linear):
         return False
 
-    # if isinstance(scheme, QuadBRC):
-    #     return False
+    if isinstance(scheme, QuadBRC):
+        return False
 
     if isinstance(scheme, RangeBRC):
         return False
 
-    # if isinstance(scheme, QdagSRC):
-    #     return True
+    if isinstance(scheme, QuadSRC):
+        return True
 
     if isinstance(scheme, TdagSRC):
         return True

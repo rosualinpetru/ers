@@ -6,7 +6,7 @@ from tqdm import tqdm
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.hilbert.hilbert import HilbertScheme
 from ers.structures.hyperrange import HyperRange
-from ers.structures.hyperrange_tree import HyperTree
+from ers.structures.hyperrange_tree import HyperRangeTree
 from ers.structures.point import Point
 from ers.util.hyperrange.uniform_split_mid_overlap_divider import UniformSplitMidOverlapDivider
 
@@ -20,12 +20,12 @@ class TdagSRCHilbert(HilbertScheme):
         hilbert_plaintext_mm = self._hilbert_plaintext_mm(plaintext_mm)
 
         tdag_height = self.dimensions * self.order
-        self.tdag = HyperTree.init(HyperRange.from_bits([tdag_height]), UniformSplitMidOverlapDivider(2))
+        self.tdag = HyperRangeTree.init(HyperRange.from_bits([tdag_height]), UniformSplitMidOverlapDivider(2))
 
         modified_db = defaultdict(list)
         for distance, vals in tqdm(hilbert_plaintext_mm.items()):
-            for hyperrange in self.tdag.descend(HyperRange.from_point_coords([distance])):
-                label_bytes = hyperrange.to_bytes()
+            for rng in self.tdag.descend(HyperRange.from_point_coords([distance])):
+                label_bytes = rng.to_bytes()
                 modified_db[label_bytes].extend(vals)
 
         self.encrypted_db = self.emm_engine.build_index(key, modified_db)
@@ -41,27 +41,3 @@ class TdagSRCHilbert(HilbertScheme):
         trapdoors.add(self.emm_engine.trapdoor(key, label_bytes))
 
         return trapdoors
-
-
-def _descend_tree(val: int, r: tuple[int, int]) -> List[tuple[int, int]]:
-    ranges = []
-    while r != (val, val):
-        if r not in ranges:
-            ranges.append(r)
-
-        middle = ((r[0] + r[1]) // 2)
-
-        mid_0 = (middle - ((r[0] + r[1]) // 4))
-        mid_1 = (middle + ((r[0] + r[1]) // 4)) + 1
-
-        if mid_0 <= val <= mid_1 and (r[1] - r[0]) > 1:
-            if (mid_0, mid_1) not in ranges:
-                ranges.append((mid_0, mid_1))
-
-        if val <= ((r[0] + r[1]) // 2):
-            r = (r[0], ((r[0] + r[1]) // 2))
-        else:
-            r = (((r[0] + r[1]) // 2) + 1, r[1])
-
-    ranges.append((val, val))
-    return ranges

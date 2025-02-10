@@ -5,13 +5,40 @@ from ers.util.hyperrange.divider import HyperRangeDivider
 
 
 class CustomUniformSplitMidOverlapDivider(HyperRangeDivider):
+    """
+    A custom HyperRange divider that splits a given range uniformly across each dimension,
+    introducing overlapping subdivisions to enhance spatial coverage.
+
+    This class takes a predefined number of splits per dimension and recursively divides the given
+    HyperRange accordingly. Additionally, it inserts overlapping subranges at midpoints between adjacent divisions
+    to ensure smoother transitions and avoid gaps in hierarchical space partitioning.
+    """
+
     def __init__(self, num_splits_per_dim: List[int]):
+        """
+        Initializes the CustomUniformSplitMidOverlapDivider with the number of splits per dimension.
+
+        :param num_splits_per_dim: A list specifying how many times each dimension should be split.
+        """
         self.num_splits_per_dim = num_splits_per_dim
 
     def _num_splits_for_dim(self, dim: int):
+        """
+        Returns the number of splits for a given dimension.
+
+        :param dim: The dimension index.
+        :return: The number of splits for the given dimension.
+        """
         return self.num_splits_per_dim[dim]
 
     def divide(self, rng: HyperRange) -> List[HyperRange]:
+        """
+        Recursively divides a HyperRange into smaller subranges based on the predefined split strategy,
+        introducing midpoint overlapping subranges to enhance continuity.
+
+        :param rng: The HyperRange to be divided.
+        :return: A list of subranges after division.
+        """
         if self.num_splits_per_dim is not None:
             assert len(self.num_splits_per_dim) == rng.dimensions
 
@@ -53,7 +80,6 @@ class CustomUniformSplitMidOverlapDivider(HyperRangeDivider):
 
                 current_start = sub_range_end + 1
 
-            offset_ranges = []
             i = 0
             while True:
                 if i >= len(sub_ranges) - 1:
@@ -89,4 +115,7 @@ class CustomUniformSplitMidOverlapDivider(HyperRangeDivider):
 
             return results
 
-        return helper(rng, 0) - rng
+        result = helper(rng, 0)
+        if rng in result:
+            result.remove(rng)
+        return result

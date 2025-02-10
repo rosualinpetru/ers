@@ -3,7 +3,7 @@
 QUERIES_COUNT=250 # spread across 10 buckets
 SCHEME=$1
 
-VALID_SCHEMES=("linear_3d" "range_brc_3d" "qdag_src_3d" "tdag_src_3d" "quad_brc_3d")
+VALID_SCHEMES=("linear" "range_brc" "quad_brc" "quad_src" "tdag_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert")
 
 # Check if the SCHEME is in VALID_SCHEMES
 if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then

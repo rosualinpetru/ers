@@ -11,7 +11,7 @@ from ..structures.point import Point
 from ..util.hyperrange.uniform_split_divider import UniformSplitDivider
 
 
-class ExpoBRC(EMM):
+class QuadBRC(EMM):
     def __init__(self, emm_engine: EMMEngine):
         super().__init__(emm_engine)
         self.tree = None

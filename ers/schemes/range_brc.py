@@ -7,6 +7,7 @@ from ers.structures.point import Point
 from .common.emm import EMM
 from .common.emm_engine import EMMEngine
 from ..structures.hyperrange import HyperRange
+from ..structures.hyperrange_tree import HyperRangeTree
 from ..structures.hyperrange_tree_product import HyperRangeTreeProduct
 from ..util.hyperrange.uniform_split_divider import UniformSplitDivider
 
@@ -18,7 +19,8 @@ class RangeBRC(EMM):
         self.encrypted_db = None
 
     def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        self.tree_product = HyperRangeTreeProduct.init(self.emm_engine.DIMENSIONS_BITS, UniformSplitDivider(2))
+        d1_trees = [HyperRangeTree.init(HyperRange.from_bits([h]), UniformSplitDivider(2)) for h in self.emm_engine.DIMENSIONS_BITS]
+        self.tree_product = HyperRangeTreeProduct(d1_trees)
 
         modified_db = defaultdict(list)
         for point, vals in tqdm(plaintext_mm.items()):

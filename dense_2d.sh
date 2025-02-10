@@ -1,11 +1,9 @@
 #!/bin/bash
 
-OUTPUT="dense_2d.out.txt"
-
 QUERIES_COUNT=250 # spread across 10 buckets
 SCHEME=$1
 
-VALID_SCHEMES=("linear" "range_brc" "quad_brc" "qdag_src" "tdag_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert")
+VALID_SCHEMES=("linear" "range_brc" "quad_brc" "quad_src" "tdag_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert")
 
 # Check if the SCHEME is in VALID_SCHEMES
 if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then

@@ -6,6 +6,12 @@ from ers.util.serialization import serialization
 
 @functools.total_ordering
 class Point:
+    def dimensions(self):
+        return self.__dimensions
+
+    def coords(self):
+        return self.__coords[:]
+
     def __init__(self, coords: List[int]):
         self.__coords = coords
         self.__dimensions = len(coords)
@@ -45,9 +51,3 @@ class Point:
 
     def __getitem__(self, index):
         return self.__coords[index]
-
-    def dimensions(self):
-        return self.__dimensions
-
-    def coords(self):
-        return self.__coords[:]

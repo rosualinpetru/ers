@@ -153,7 +153,7 @@ def generate_dense_database_2d(domain_size: int, records_limit: int) -> Dict[Tup
     count = 0
     for x, y in itertools.product(range(2 ** domain_size), range(2 ** domain_size)):
         if i % step == 0:
-            dataset[(x, y)].append(bytes(str(i), 'utf-8'))
+            dataset[(x, y)].append(bytes(str([x, y]), 'utf-8'))
             count += 1
             if count >= records_limit:
                 break

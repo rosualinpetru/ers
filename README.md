@@ -1,11 +1,12 @@
-# Range Search on Encrypted Multi-Attribute Data: Experiment Code (Extensions)
+# Range Search on Encrypted Multi-Attribute Data: Experiment Code
 
-This fork implements additional range search schemes for multi-attribute data.
+This fork implements additional range search schemes for multi-attribute data and refactors the existing code.
 
-*The only contribution is contained in the **extensions** package!*
+Packages:
 
-* **ers**: The package contains schemes associated with the paper "Range Search on Encrypted Multi-Attribute Data" by Francesca Falzon, Evangelia Anna Markatou, Zachary Espiritu, and Roberto Tamassia.
-* **extensions**: Contains newly introduced schemes.
+* **ers.structures**: Defines structures that generically handle any number of dimensions.
+* **ers.schemes**: The package contains schemes associated with the paper "Range Search on Encrypted Multi-Attribute Data" by Francesca Falzon, Evangelia Anna Markatou, Zachary Espiritu, and Roberto Tamassia. These schemes are refactored to handle any dimension generically.
+* **ers.benchmark**: Contains utilities to generate XLSX reports, generate datasets and plot Hilbert schemes.
 
 **Important:** This repository implements several cryptographic primitives (used for research purposes) which should not be used in production.
 
@@ -18,9 +19,21 @@ The `requirements.txt` file in the main directory contains a list of all the nec
 
 ### Benchmarking the schemes
 
-We additionally implement the following schemes:
+The benchmark script is able to detect the number of dimensions of a specified dataset and instantiate the scheme according to the number of dimensions.
 
-* **Hilbert**: A scheme that achieves optimal storage at the expense of query bandwidth.
+The schemes that were implemented, but were generalised to any dimension:
+* Linear
+* RangeBRC
+* TdagSRC
+* QuadBRC
+* QuadSRC
+
+The schemes that are additionally implemented:
+* LinearHilbert
+* RangeBRCHilbert
+* TdagSRCHilbert
+
+_Note:_ There might be no Hilbert counterpart for Quadratic schemes.
 
 Each of our schemes can be tested on the following four datasets:
 
@@ -29,34 +42,32 @@ Each of our schemes can be tested on the following four datasets:
 * **Gowalla**: A 4D dataset consisting of $6,442,892$ latitude-longitude points of check-ins 
  from users of the  Gowalla social networking website  between  2009 and 2010.
 * **Cali**: A 2D dataset of $21,047$ latitude-longitude points of road network intersections in California.
+* **Dense 2D**: A generated 2D dataset that covers the entire domain, up to a specified number of records.
 
-You can execute our schemes on these datasets by executing the following command from the root directory of the repository:
+To run a benchmark, run a script specific for each dataset:
+* cali.sh # Dimension should be in [0, 15] as increasing the scale beyond brings no difference.
+* nh.sh
+* spitz.sh # Dimension should be in [0, 14] as increasing the scale beyond brings no difference.
+* gowalla.sh (takes a lot of time) # Dimension should be in [0, 42] as increasing the scale beyond brings no difference.
 
+The code currently takes the original datasets and can map the points to a specified domain size. The domain size is parametrized.
+It is advisable to read and configure the script before running the benchmark.
+For instance, to run spitz:
+```commandline
+for d in $(seq 6 6); do
+  python3 -m ers.benchmark.cli \
+    --scheme "$SCHEME" \
+    --dataset spitz \
+    --domain-size $d \
+    --records-limit 1000000 \
+    --queries-count $QUERIES_COUNT
+done
 ```
-$ bash {spitz.sh, cali.sh, gowalla.sh, nh.sh} {hilbert}
-```
-
-For example, if you wish to reproduce our Hilbe scheme experiments on the California data set, then you should run `$ bash cali.sh range_brc`. Each such command generates builds the index over the appropriate domain size and reports the resulting index size and setup time. Then it generates 100 queries and averages and reports the query response times and query sizes over these 100 queries.
+**d** represents the dimension size as bit length. You can configure the range such that multiple
+domain sizes are benchmarked sequentially (this is to submit a longer job for a server to handle).
+The benchmark output will be in the **benchmarks** folder.
 
 ### License
 
 All code is provided as-is under the *Apache License 2.0*. See
 [`LICENSE`](./LICENSE) for full license text.
-
-The source code from the `extensions` should be prefixed with a comment containing the following text:
-
-```
-Copyright 2024 Alin-Petru Rosu and Evangelia Anna Markatou
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```

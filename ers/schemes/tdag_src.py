@@ -8,6 +8,7 @@ from tqdm import tqdm
 from .common.emm import EMM
 from .common.emm_engine import EMMEngine
 from ..structures.hyperrange import HyperRange
+from ..structures.hyperrange_tree import HyperRangeTree
 from ..structures.hyperrange_tree_product import HyperRangeTreeProduct
 from ..structures.point import Point
 from ..util.hyperrange.uniform_split_mid_overlap_divider import UniformSplitMidOverlapDivider
@@ -20,7 +21,8 @@ class TdagSRC(EMM):
         self.encrypted_db = None
 
     def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        self.tree_product = HyperRangeTreeProduct.init(self.emm_engine.DIMENSIONS_BITS, UniformSplitMidOverlapDivider(2))
+        d1_trees = [HyperRangeTree.init(HyperRange.from_bits([h]), UniformSplitMidOverlapDivider(2)) for h in self.emm_engine.DIMENSIONS_BITS]
+        self.tree_product = HyperRangeTreeProduct(d1_trees)
 
         modified_db = defaultdict(list)
         for point, vals in tqdm(plaintext_mm.items()):

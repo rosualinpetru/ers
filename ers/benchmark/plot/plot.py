@@ -6,7 +6,7 @@ from ers.benchmark.util.query_generator import generate_bucket_query_2d
 from ers.schemes.common.emm_engine import EMMEngine
 from ers.schemes.hilbert.linear_hilbert import LinearHilbert
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
-from ers.schemes.range_brc import RangeBRC
+from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
 from ers.structures.hyperrange import HyperRange
 from ers.structures.point import Point
 from ers.util.serialization.serialization import BytesToObject
@@ -15,11 +15,11 @@ if __name__ == "__main__":
     # VARIABLES
     SEC_PARAM = 16
 
-    SCHEME = RangeBRCHilbert
+    SCHEME = TdagSRCHilbert
     MERGE_GAP_TOLERANCE = 0
     SCALING_PERCENTAGE = 0
 
-    DOMAIN_BITS = 4
+    DOMAIN_BITS = 3
 
     plaintext_mm_raw = generate_dense_database_2d(DOMAIN_BITS, 1000000)
     plaintext_mm = {Point(list(t)): plaintext_mm_raw[t] for t in plaintext_mm_raw}
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     (c1, c2) = generate_bucket_query_2d(2 ** DOMAIN_BITS, 2 ** DOMAIN_BITS, 2, 10)
     query = HyperRange.from_coords(list(c1), list(c2))
 
-    search_tokens = hc.trapdoor(key, query, MERGE_GAP_TOLERANCE)
+    search_tokens = hc.trapdoor(key, query)
 
     encrypted_results = hc.search(search_tokens)
     resolved_results = hc.resolve(key, encrypted_results)
@@ -41,7 +41,6 @@ if __name__ == "__main__":
     hilbert_points = np.array([hc.hc.point_from_distance(i) for i in range(num_points)])
 
     plt.figure(figsize=(256, 256))
-
 
     def point_color(point: Point):
         if query.contains_point(point):

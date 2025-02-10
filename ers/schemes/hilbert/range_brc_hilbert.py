@@ -20,7 +20,7 @@ class RangeBRCHilbert(HilbertScheme):
         hilbert_plaintext_mm = self._hilbert_plaintext_mm(plaintext_mm)
 
         tree_height = self.dimensions * self.order
-        self.tree = HyperRangeTree.init(HyperRange.from_bits(tree_height), UniformSplitDivider(2))
+        self.tree = HyperRangeTree.init(HyperRange.from_bits([tree_height]), UniformSplitDivider(2))
 
         modified_db = defaultdict(list)
         for distance, vals in tqdm(hilbert_plaintext_mm.items()):

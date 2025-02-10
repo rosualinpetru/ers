@@ -8,6 +8,8 @@ from ers.schemes.hilbert.linear_hilbert import LinearHilbert
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
 from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
 from ers.schemes.linear import Linear
+from ers.schemes.quad_brc import QuadBRC
+from ers.schemes.quad_src import QuadSRC
 from ers.schemes.range_brc import RangeBRC
 from ers.schemes.tdag_src import TdagSRC
 from ers.structures.point import Point
@@ -20,6 +22,8 @@ schemes = {
     "linear": Linear,
     "range_brc": RangeBRC,
     "tdag_src": TdagSRC,
+    "quad_brc": QuadBRC,
+    "quad_src": QuadSRC,
     "linear_hilbert": LinearHilbert,
     "range_brc_hilbert": RangeBRCHilbert,
     "tdag_src_hilbert": TdagSRCHilbert,
