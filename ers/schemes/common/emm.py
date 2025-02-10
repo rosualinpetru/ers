@@ -1,31 +1,38 @@
-##
-## Copyright 2022 Zachary Espiritu and Evangelia Anna Markatou and
-##                Francesca Falzon and Roberto Tamassia and William Schor
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
 from .emm_engine import EMMEngine
 
 from typing import Set
 
 
 class EMM:
+    """
+    A wrapper class for the EMMEngine, providing a simplified interface for secure setup
+    and search result resolution.
+    """
+
     def __init__(self, emm_engine: EMMEngine):
+        """
+        Initializes the EMM instance with an underlying EMMEngine.
+
+        :param emm_engine: An instance of EMMEngine that handles secure indexing and search.
+        """
         self.emm_engine = emm_engine
+        self.dimensions = emm_engine.dimensions
 
     def setup(self, security_parameter: int) -> bytes:
+        """
+        Generates a cryptographic key with a specified security parameter.
+
+        :param security_parameter: The bit length of the secure key.
+        :return: A securely generated random key.
+        """
         return self.emm_engine.setup(security_parameter)
 
     def resolve(self, key: bytes, results: Set[bytes]) -> Set[bytes]:
+        """
+        Decrypts search results using the provided key.
+
+        :param key: The secret key used for decryption.
+        :param results: A set of encrypted values retrieved from the index.
+        :return: A set of decrypted plaintext values.
+        """
         return self.emm_engine.resolve(key, results)

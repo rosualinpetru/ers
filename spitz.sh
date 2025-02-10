@@ -3,7 +3,7 @@
 QUERIES_COUNT=250 # spread across 10 buckets
 SCHEME=$1
 
-VALID_SCHEMES=("linear" "range_brc" "quad_brc" "qdag_src" "tdag_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert")
+VALID_SCHEMES=("linear" "range_brc" "quad_brc" "quad_src" "tdag_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert")
 
 # Check if the SCHEME is in VALID_SCHEMES
 if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
@@ -14,11 +14,11 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-for d in $(seq 6 10); do
-  python3 -m extensions.util.benchmark.cli \
+for d in $(seq 5 5); do
+  python3 -m ers.benchmark.cli \
     --scheme "$SCHEME" \
-    --dataset-name spitz \
-    --dataset-dimension-bits $d \
+    --dataset spitz \
+    --domain-size $d \
     --records-limit 1000000 \
     --queries-count $QUERIES_COUNT
 done

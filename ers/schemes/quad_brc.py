@@ -1,96 +1,51 @@
-##
-## Copyright 2022 Zachary Espiritu and Evangelia Anna Markatou and
-##                Francesca Falzon and Roberto Tamassia and William Schor
-##
-## Licensed under the Apache License, Version 2.0 (the "License");
-## you may not use this file except in compliance with the License.
-## You may obtain a copy of the License at
-##
-##    http://www.apache.org/licenses/LICENSE-2.0
-##
-## Unless required by applicable law or agreed to in writing, software
-## distributed under the License is distributed on an "AS IS" BASIS,
-## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-## See the License for the specific language governing permissions and
-## limitations under the License.
-##
-
-from .common.emm_engine import EMMEngine
-from .common.emm import EMM
-from ..structures.point import Point
-from ..structures.quad_tree import QuadTree
-from ..structures.rect import Rect
-
-from typing import Dict, List, Set
 from collections import defaultdict
+from typing import Dict, List, Set
+
 from tqdm import tqdm
-import itertools
-import math
-import struct
+
+from .common.emm import EMM
+from .common.emm_engine import EMMEngine
+from ..structures.hyperrange import HyperRange
+from ..structures.hyperrange_tree import HyperRangeTree
+from ..structures.point import Point
+from ..util.hyperrange.uniform_split_divider import UniformSplitDivider
 
 
-
-def next_power_of_2(x):
-    return 1 if x == 0 else 2 ** (x - 1).bit_length()
 class QuadBRC(EMM):
-    def __init__(self, emm_engine: EMMEngine, encrypted_db: Dict[bytes, bytes] = {}):
-        self.encrypted_db = encrypted_db
-        self.qdag = None
+    def __init__(self, emm_engine: EMMEngine):
         super().__init__(emm_engine)
+        self.tree = None
+        self.encrypted_db = None
 
     def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        """
-        Outputs an encrypted index I.
-        """
-        print("Build quadtree...")
-        max_side_len = max(self.emm_engine.MAX_X, self.emm_engine.MAX_Y)
-        start_level = math.ceil(math.log2(next_power_of_2(max_side_len)))
-        self.qdag = QuadTree(
-            Rect(Point(0, 0), Point(2 ** start_level-1, 2 ** start_level-1)),
-            start_level
-        )
+        self.tree = HyperRangeTree.init(HyperRange.from_bits(self.emm_engine.DIMENSIONS_BITS), UniformSplitDivider(2))
 
-        print("Inserting...")
         modified_db = defaultdict(list)
-        for point, files in tqdm(plaintext_mm.items()):
-            for rect_cover in self.qdag.find_containing_range_covers(point):
-                #if point.x == 5 and point.y ==4:
-                #    print(rect_cover)
-                label_bytes = QuadBRC._convert_rect_to_bytes(rect_cover)
-                modified_db[label_bytes].extend(files)
+        for point, vals in tqdm(plaintext_mm.items()):
+            assert point.dimensions() == self.dimensions
 
-        # Sigma.Setup over the modified_db:
+            for rng in self.tree.descend(point):
+                label = rng.to_bytes()
+                modified_db[label].extend(vals)
+
         self.encrypted_db = self.emm_engine.build_index(key, modified_db)
 
-    @classmethod
-    def convert_query_to_bytes(self, p1: Point, p2: Point) -> bytes:
-        return struct.pack("iiii", p1.x, p1.y, p2.x, p2.y)
-
-    @staticmethod
-    def _convert_rect_to_bytes(rect: Rect):
-        """
-        Converts a `Rect` to its serialized byte representation for storage in
-        an encrypted DB.
-        """
-        return QuadBRC.convert_query_to_bytes(rect.start, rect.end)
-
-    def trapdoor(self, key: bytes, p1: Point, p2: Point) -> Set[bytes]:
+    def trapdoor(self, key: bytes, query: HyperRange) -> Set[bytes]:
         trapdoors = set()
-        range_covers = self.qdag.get_brc_range_cover(Rect(p1, Point(p2.x, p2.y)))
-        #print("Range Cover")
-        #for i in range_covers:
-        #    print(i)
-        for rect_rc in range_covers:
-            token_bytes = QuadBRC._convert_rect_to_bytes(rect_rc)
-            new_trp = self.emm_engine.trapdoor(key, token_bytes)
-            trapdoors.add(new_trp)
+
+        for rng in self.tree.brc(query):
+            label = rng.to_bytes()
+            trapdoors.add(self.emm_engine.trapdoor(key, label))
+
         return trapdoors
 
     def search(self, trapdoors: Set[bytes]) -> Set[bytes]:
         results = set()
-        #print("results")
-        for trpdr in trapdoors:
-            result = self.emm_engine.search(trpdr, self.encrypted_db)
-            #print(len(result))
-            results = results.union(result)
+
+        if self.encrypted_db is None:
+            raise ValueError("Index is not built yet!")
+
+        for trapdoor in trapdoors:
+            results = results.union(self.emm_engine.search(trapdoor, self.encrypted_db))
+
         return results
