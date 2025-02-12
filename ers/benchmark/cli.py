@@ -5,6 +5,8 @@ from datetime import datetime
 from ers.benchmark.benchmark import run_benchmark
 from ers.benchmark.util.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d
 from ers.schemes.hilbert.linear_hilbert import LinearHilbert
+from ers.schemes.hilbert.quad_brc_hilbert import QuadBRCHilbert
+from ers.schemes.hilbert.quad_src_hilbert import QuadSRCHilbert
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
 from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
 from ers.schemes.linear import Linear
@@ -27,6 +29,8 @@ schemes = {
     "linear_hilbert": LinearHilbert,
     "range_brc_hilbert": RangeBRCHilbert,
     "tdag_src_hilbert": TdagSRCHilbert,
+    "quad_brc_hilbert": QuadBRCHilbert,
+    "quad_src_hilbert": QuadSRCHilbert,
 }
 
 #############################################################################

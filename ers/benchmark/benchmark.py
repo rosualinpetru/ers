@@ -10,13 +10,10 @@ from tqdm import tqdm
 from ers.benchmark.util.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
 from ers.benchmark.util.xlsx_util import XLSXUtil
 from ers.schemes.common.emm import EMMEngine
-from ers.schemes.hilbert.linear_hilbert import LinearHilbert
-from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
+from ers.schemes.hilbert.quad_brc_hilbert import QuadBRCHilbert
+from ers.schemes.hilbert.quad_src_hilbert import QuadSRCHilbert
 from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
-from ers.schemes.linear import Linear
-from ers.schemes.quad_brc import QuadBRC
 from ers.schemes.quad_src import QuadSRC
-from ers.schemes.range_brc import RangeBRC
 from ers.schemes.tdag_src import TdagSRC
 from ers.structures.hyperrange import HyperRange
 
@@ -24,32 +21,7 @@ BUCK_SIZE = 10
 
 
 def compute_precision(scheme):
-    if isinstance(scheme, Linear):
-        return False
-
-    if isinstance(scheme, QuadBRC):
-        return False
-
-    if isinstance(scheme, RangeBRC):
-        return False
-
-    if isinstance(scheme, QuadSRC):
-        return True
-
-    if isinstance(scheme, TdagSRC):
-        return True
-
-    if isinstance(scheme, LinearHilbert):
-        return False
-
-    if isinstance(scheme, RangeBRCHilbert):
-        return False
-
-    if isinstance(scheme, TdagSRCHilbert):
-        return True
-
-    return True
-
+    return isinstance(scheme, (QuadSRC, TdagSRC, TdagSRCHilbert, QuadBRCHilbert, QuadSRCHilbert))
 
 def generate_query_bucks(queries_count: int, dimensions: int, domain_size: int) -> Dict[int, set]:
     bound = 2 ** domain_size

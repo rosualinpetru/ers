@@ -22,18 +22,22 @@ The `requirements.txt` file in the main directory contains a list of all the nec
 The benchmark script is able to detect the number of dimensions of a specified dataset and instantiate the scheme according to the number of dimensions.
 
 The schemes that were implemented, but were generalised to any dimension:
-* Linear
-* RangeBRC
-* TdagSRC
-* QuadBRC
-* QuadSRC
+* **Linear** - could be seen as a tree of depth 1, where all leafs are points in the domain
+* **RangeBRC** - uses multi-dimensional trees. As implementation, a multi-dimensional tree is implemented as a product of HyperTrees (trees of decomposing HyperRanges / HyperRectangles) where each tree in the product is one dimensional and each dimension is represented by a tree. The division is performed on each invididual tree/dimension and the results (descending operations, range covers, etc.) are reconstructed by doing a product between the partial results of each dimension.
+* **TdagSRC** - same as RangeBRC, but the division strategy is different, i.e., each dimension upon being split in two, also inserts an overlapping middle segments between the middles of the splits, for each dimension.
+* **QuadBRC** - simply decomposes a HyperRange into smaller Ranges by dividing each dimension in two. Depending on the number of dimensions, the resulting number of decomposed ranges can be different: (number_of_splits)^(number_of_dimensions).
+* **QuadSRC** - same as QuadBRC, but uses SRC.
+
+For better understanding how the HyperRange, HyperTree, HyperTreeProduct and RangeDividers work, please refer to the documentation in the code.
 
 The schemes that are additionally implemented:
 * LinearHilbert
-* RangeBRCHilbert
-* TdagSRCHilbert
+* RangeBRCHilbert - since a Hilbert curve reduces dimensionality to 1, the RangeBRCHilbert would represent a HyperTreeProduct with only one tree. Therefore, RangeBRCHilbert relies only on a HyperTree that divides the Hilbert curve in half recursively.
+* TdagSRCHilbert - same as RangeBRCHilbert, but uses a different division strategy with middle overlap.
+* QuadBRCHilbert - equivalent to QuadBRC. Split a HyperTree in 2^(number_of_dimensions) in order to keep the height of the tree constant. Records the same index size as QuadBRC.
+* QuadSRCHilbert - same as QuadBRCHilbert, but uses SRC.
 
-_Note:_ There might be no Hilbert counterpart for Quadratic schemes.
+The Hilbert curve is used in the first step to first map the domain (points) to Hilbert domain (Hilbert indices). Then, BRC and SRC are defined for a Hilbert curve, including how to determine the segments that form a HyperRange with some empirical parameters to trade-off efficiency, precision and security. Refer to the Hilbert curve data structure in the code for more details about how it functions.
 
 Each of our schemes can be tested on the following four datasets:
 

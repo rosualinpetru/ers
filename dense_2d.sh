@@ -3,7 +3,7 @@
 QUERIES_COUNT=250 # spread across 10 buckets
 SCHEME=$1
 
-VALID_SCHEMES=("linear" "range_brc" "quad_brc" "quad_src" "tdag_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert")
+VALID_SCHEMES=("linear" "range_brc" "tdag_src" "quad_brc" "quad_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert" "quad_brc_hilbert" "quad_src_hilbert")
 
 # Check if the SCHEME is in VALID_SCHEMES
 if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
@@ -14,7 +14,7 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
   exit 1
 fi
 
-for d in $(seq 5 5); do
+for d in $(seq 3 6); do
   python3 -m ers.benchmark.cli \
     --scheme "$SCHEME" \
     --dataset dense_2d \

@@ -30,13 +30,13 @@ def generate_bucket_query_2d(bound_x: int, bound_y: int, bucket_index: int, buck
     max_width = min(bound_x - 1, max_area)
 
     while True:
-        width = min_width + secrets.randbelow(max_width - min_width + 1)
+        width = min_width + secrets.randbelow(max(max_width - min_width + 1, 1))
 
         min_height = max(1, math.ceil(min_area / width))
         max_height = min(bound_y - 1, math.floor(max_area / width))
 
         if 0 < width < bound_x and 0 < min_height < bound_y and 0 < max_height < bound_y:
-            height = min_height + secrets.randbelow(max_height - min_height + 1)
+            height = min_height + secrets.randbelow(max(max_height - min_height + 1, 1))
 
             area = width * height
             if min_area <= area <= max_area:
@@ -84,19 +84,19 @@ def generate_bucket_query_3d(bound_x: int, bound_y: int, bound_z: int, bucket_in
     max_width = min(bound_x - 1, max_volume)
 
     while True:
-        width = min_width + secrets.randbelow(max_width - min_width + 1)
+        width = min_width + secrets.randbelow(max(max_width - min_width + 1, 1))
 
         min_height = max(1, math.ceil(min_volume / (width * (bound_z - 1))))
         max_height = min(bound_y - 1, math.floor(max_volume / width))
 
         if 0 < width < bound_x and 0 < min_height < bound_y and 0 < max_height < bound_y:
-            height = min_height + secrets.randbelow(max_height - min_height + 1)
+            height = min_height + secrets.randbelow(max(max_height - min_height + 1, 1))
 
             min_depth = max(1, math.ceil(min_volume / (width * height)))
             max_depth = min(bound_z - 1, math.floor(max_volume / (width * height)))
 
             if 0 < height < bound_y and 0 < min_depth < bound_z and 0 < max_depth < bound_z:
-                depth = min_depth + secrets.randbelow(max_depth - min_depth + 1)
+                depth = min_depth + secrets.randbelow(max(max_depth - min_depth + 1, 1))
 
                 volume = width * height * depth
                 if min_volume <= volume <= max_volume:
