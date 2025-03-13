@@ -15,7 +15,7 @@ if [[ ! " ${VALID_SCHEMES[@]} " =~ " ${SCHEME} " ]]; then
 fi
 
 for d in $(seq 5 10); do
-  python3 -m extensions.util.benchmark.cli \
+  python3 -m ers.benchmark.cli \
     --scheme "$SCHEME" \
     --dataset-name cali \
     --dataset-dimension-bits $d \
