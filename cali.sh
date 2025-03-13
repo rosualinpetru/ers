@@ -17,8 +17,8 @@ fi
 for d in $(seq 5 10); do
   python3 -m ers.benchmark.cli \
     --scheme "$SCHEME" \
-    --dataset-name cali \
-    --dataset-dimension-bits $d \
+    --dataset cali \
+    --domain-size $d \
     --records-limit 1000000 \
     --queries-count $QUERIES_COUNT
 done
