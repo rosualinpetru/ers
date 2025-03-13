@@ -49,10 +49,10 @@ Each of our schemes can be tested on the following four datasets:
 * **Dense 2D**: A generated 2D dataset that covers the entire domain, up to a specified number of records.
 
 To run a benchmark, run a script specific for each dataset:
-* cali.sh # Dimension should be in [0, 15] as increasing the scale beyond brings no difference.
+* cali.sh # Domain size should be in $[2^0]$ to $[2^{15}]$ as increasing the scale beyond brings no difference.
 * nh.sh
-* spitz.sh # Dimension should be in [0, 14] as increasing the scale beyond brings no difference.
-* gowalla.sh (takes a lot of time) # Dimension should be in [0, 42] as increasing the scale beyond brings no difference.
+* spitz.sh # Domain size should be in $[2^0]$ to $[2^{16}]$ as increasing the scale beyond brings no difference.
+* gowalla.sh (takes a lot of time) # Domain size should be in $[2^0]$ to $[2^{42}]$ as increasing the scale beyond brings no difference.
 
 The code currently takes the original datasets and can map the points to a specified domain size. The domain size is parametrized.
 It is advisable to read and configure the script before running the benchmark.
