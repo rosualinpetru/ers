@@ -52,3 +52,4 @@ coverage.xml
 # Cython debug symbols
 cython_debug/
 benchmarks/*
+queries/*

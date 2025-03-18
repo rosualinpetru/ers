@@ -1,9 +1,11 @@
+import ast
 import math
+import os
 import sys
 import time
 from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict
+from typing import Dict, List
 
 from tqdm import tqdm
 
@@ -23,10 +25,20 @@ BUCK_SIZE = 10
 def compute_precision(scheme):
     return isinstance(scheme, (QuadSRC, TdagSRC, TdagSRCHilbert, QuadBRCHilbert, QuadSRCHilbert))
 
-def generate_query_bucks(queries_count: int, dimensions: int, domain_size: int) -> Dict[int, set]:
-    bound = 2 ** domain_size
+def generate_query_bucks(
+    queries_count: int, dimensions: int, domain_size: int
+) -> Dict[int, List]:
+    filepath = f"queries/q_{dimensions}_{domain_size}.txt"
 
-    ten_bucks = defaultdict(set)
+    if os.path.exists(filepath):
+        with open(filepath, "r") as file:
+            content = file.read()
+            ten_bucks = ast.literal_eval(content)
+            ten_bucks = {int(k): [HyperRange.from_coords(list(start), list(end)) for start, end in vs] for k, vs in ten_bucks.items()}
+        return ten_bucks
+
+    bound = 2 ** domain_size
+    ten_bucks = defaultdict(list)
     i = 0
 
     for _ in range(queries_count):
@@ -37,8 +49,17 @@ def generate_query_bucks(queries_count: int, dimensions: int, domain_size: int) 
         else:
             break
 
-        ten_bucks[i * BUCK_SIZE].add(HyperRange.from_coords(list(c1), list(c2)))
+        ten_bucks[i * BUCK_SIZE].append(HyperRange.from_coords(list(c1), list(c2)))
         i = (i + 1) % BUCK_SIZE
+
+    serializable_ten_bucks = {
+        k: [(tuple(hr.start.coords()), tuple(hr.end.coords())) for hr in vs] for k, vs in ten_bucks.items()
+    }
+
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+    with open(filepath, "w") as file:
+        file.write(str(serializable_ten_bucks))
 
     return dict(ten_bucks)
 
