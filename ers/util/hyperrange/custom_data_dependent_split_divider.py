@@ -58,18 +58,21 @@ class CustomDataDependentSplitDivider(HyperRangeDivider):
         for target in target_densities:
             while idx < len(cdf) and cdf[idx] < target:
                 idx += 1
+
             segment_points.append(start + idx)
 
-        # Ensure boundaries are within [start, end]
-        segment_points[0] = start
-        segment_points[-1] = end + 1  # exclusive endpoint for easy segment construction
+        for i in range(0, len(segment_points) // 2):
+            if segment_points[i] == segment_points[i+1]:
+                segment_points[i+1] += 1
+
+            if segment_points[len(segment_points) - 1 - i] == segment_points[len(segment_points) - 2 - i]:
+                segment_points[len(segment_points) - 2 - i] -= 1
+
 
         # Avoid duplicates and ensure segments are disjoint
         segments = []
         last_point = segment_points[0]
         for point in segment_points[1:]:
-            if point <= last_point:
-                point = last_point + 1
             segments.append((last_point, point))
             last_point = point + 1
 

@@ -1,3 +1,5 @@
+import os
+
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils.exceptions import InvalidFileException
 
@@ -6,6 +8,7 @@ class XLSXUtil:
     def __init__(self, filename):
         self.filename = filename
         try:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             self.workbook = load_workbook(self.filename)
         except (FileNotFoundError, InvalidFileException):
             self.workbook = Workbook()
