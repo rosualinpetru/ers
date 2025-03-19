@@ -12,7 +12,8 @@ from tqdm import tqdm
 from ers.benchmark.util.query_generator import generate_bucket_query_2d, generate_bucket_query_3d
 from ers.benchmark.util.xlsx_util import XLSXUtil
 from ers.schemes.common.emm import EMMEngine
-from ers.schemes.hilbert.quad_brc_hilbert import QuadBRCHilbert
+from ers.schemes.dependent.quad_src_data_dependent import QuadSRCDataDependent
+from ers.schemes.hilbert.dependent.quad_src_hilbert_data_dependent import QuadSRCHilbertDataDependent
 from ers.schemes.hilbert.quad_src_hilbert import QuadSRCHilbert
 from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
 from ers.schemes.quad_src import QuadSRC
@@ -23,7 +24,7 @@ BUCK_SIZE = 10
 
 
 def compute_precision(scheme):
-    return isinstance(scheme, (QuadSRC, TdagSRC, TdagSRCHilbert, QuadBRCHilbert, QuadSRCHilbert))
+    return isinstance(scheme, (QuadSRC, QuadSRCHilbert, TdagSRC, TdagSRCHilbert, QuadSRCDataDependent, QuadSRCHilbertDataDependent))
 
 def generate_query_bucks(
     queries_count: int, dimensions: int, domain_size: int

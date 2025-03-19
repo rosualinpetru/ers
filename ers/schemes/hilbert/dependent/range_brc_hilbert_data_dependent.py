@@ -8,10 +8,10 @@ from ers.schemes.hilbert.hilbert import HilbertScheme
 from ers.structures.hyperrange import HyperRange
 from ers.structures.hyperrange_tree import HyperRangeTree
 from ers.structures.point import Point
-from ers.util.hyperrange.uniform_split_divider import UniformSplitDivider
+from ers.util.hyperrange.data_dependent_split_divider import DataDependentSplitDivider
 
 
-class QuadBRCHilbert(HilbertScheme):
+class RangeBRCHilbertDataDependent(HilbertScheme):
     def __init__(self, emm_engine: EMMEngine):
         super().__init__(emm_engine)
         self.tree = None
@@ -20,9 +20,7 @@ class QuadBRCHilbert(HilbertScheme):
         hilbert_plaintext_mm = self._hilbert_plaintext_mm(plaintext_mm)
 
         tree_height = self.dimensions * self.order
-        self.tree = HyperRangeTree.init(HyperRange.from_bits([tree_height]), UniformSplitDivider(2 ** self.dimensions))
-
-        print(self.tree)
+        self.tree = HyperRangeTree.init(HyperRange.from_bits([tree_height]), DataDependentSplitDivider(2, {Point([k]): hilbert_plaintext_mm[k] for k in hilbert_plaintext_mm.keys()}))
 
         modified_db = defaultdict(list)
         for distance, vals in tqdm(hilbert_plaintext_mm.items()):

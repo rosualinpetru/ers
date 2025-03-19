@@ -4,6 +4,12 @@ from datetime import datetime
 
 from ers.benchmark.benchmark import run_benchmark
 from ers.benchmark.util.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d
+from ers.schemes.dependent.quad_brc_data_dependent import QuadBRCDataDependent
+from ers.schemes.dependent.quad_src_data_dependent import QuadSRCDataDependent
+from ers.schemes.dependent.range_brc_data_dependent import RangeBRCDataDependent
+from ers.schemes.hilbert.dependent.quad_brc_hilbert_data_dependent import QuadBRCHilbertDataDependent
+from ers.schemes.hilbert.dependent.quad_src_hilbert_data_dependent import QuadSRCHilbertDataDependent
+from ers.schemes.hilbert.dependent.range_brc_hilbert_data_dependent import RangeBRCHilbertDataDependent
 from ers.schemes.hilbert.linear_hilbert import LinearHilbert
 from ers.schemes.hilbert.quad_brc_hilbert import QuadBRCHilbert
 from ers.schemes.hilbert.quad_src_hilbert import QuadSRCHilbert
@@ -31,6 +37,12 @@ schemes = {
     "tdag_src_hilbert": TdagSRCHilbert,
     "quad_brc_hilbert": QuadBRCHilbert,
     "quad_src_hilbert": QuadSRCHilbert,
+    "range_brc_data_dependent": RangeBRCDataDependent,
+    "quad_brc_data_dependent": QuadBRCDataDependent,
+    "quad_src_data_dependent": QuadSRCDataDependent,
+    "range_brc_hilbert_data_dependent": RangeBRCHilbertDataDependent,
+    "quad_brc_hilbert_data_dependent": QuadBRCHilbertDataDependent,
+    "quad_src_hilbert_data_dependent": QuadSRCHilbertDataDependent,
 }
 
 #############################################################################

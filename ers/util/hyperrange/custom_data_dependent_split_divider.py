@@ -14,7 +14,7 @@ class CustomDataDependentSplitDivider(HyperRangeDivider):
 
     def __init__(self, num_splits_per_dim: List[int], plaintext_mm: Dict[Point, List[bytes]]):
         self.num_splits_per_dim = num_splits_per_dim
-        self.points = plaintext_mm.keys()
+        self.points = list(plaintext_mm.keys())
         self.uniform = CustomUniformSplitDivider(num_splits_per_dim)
 
     def _num_splits_for_dim(self, dim: int):
@@ -37,6 +37,9 @@ class CustomDataDependentSplitDivider(HyperRangeDivider):
 
     @staticmethod
     def _divide_segment_by_density(start: int, end: int, dimension_distribution: dict[int, int], splits: int):
+        if splits >= end - start + 1:
+            return [(i, i) for i in range(start, end + 1) ]
+
         values = list(range(start, end + 1))
         densities = [dimension_distribution.get(i, 0) for i in values]
 
@@ -47,9 +50,6 @@ class CustomDataDependentSplitDivider(HyperRangeDivider):
             cdf.append(cumulative)
 
         total_density = cdf[-1]
-
-        if total_density == 0 or splits <= 0:
-            return [(start, end)]  # fallback single segment
 
         target_densities = [total_density * i // splits for i in range(splits + 1)]
 
@@ -70,8 +70,8 @@ class CustomDataDependentSplitDivider(HyperRangeDivider):
         for point in segment_points[1:]:
             if point <= last_point:
                 point = last_point + 1
-            segments.append((last_point, point - 1))
-            last_point = point
+            segments.append((last_point, point))
+            last_point = point + 1
 
         # Adjust the last segment to end exactly at `end`
         if segments:

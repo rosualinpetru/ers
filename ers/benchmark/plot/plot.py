@@ -4,9 +4,14 @@ import numpy as np
 from ers.benchmark.util.dataset_generator import generate_dense_database_2d
 from ers.benchmark.util.query_generator import generate_bucket_query_2d
 from ers.schemes.common.emm_engine import EMMEngine
+from ers.schemes.hilbert.dependent.quad_brc_hilbert_data_dependent import QuadBRCHilbertDataDependent
+from ers.schemes.hilbert.dependent.quad_src_hilbert_data_dependent import QuadSRCHilbertDataDependent
+from ers.schemes.hilbert.dependent.range_brc_hilbert_data_dependent import RangeBRCHilbertDataDependent
 from ers.schemes.hilbert.linear_hilbert import LinearHilbert
+from ers.schemes.hilbert.quad_brc_hilbert import QuadBRCHilbert
 from ers.schemes.hilbert.range_brc_hilbert import RangeBRCHilbert
 from ers.schemes.hilbert.tdag_src_hilbert import TdagSRCHilbert
+from ers.schemes.range_brc import RangeBRC
 from ers.structures.hyperrange import HyperRange
 from ers.structures.point import Point
 from ers.util.serialization.serialization import BytesToObject
@@ -15,7 +20,7 @@ if __name__ == "__main__":
     # VARIABLES
     SEC_PARAM = 16
 
-    SCHEME = TdagSRCHilbert
+    SCHEME = RangeBRCHilbertDataDependent
     MERGE_GAP_TOLERANCE = 0
     SCALING_PERCENTAGE = 0
 
@@ -29,7 +34,7 @@ if __name__ == "__main__":
     key = hc.setup(SEC_PARAM)
     hc.build_index(key, plaintext_mm)
 
-    (c1, c2) = generate_bucket_query_2d(2 ** DOMAIN_BITS, 2 ** DOMAIN_BITS, 2, 10)
+    (c1, c2) = generate_bucket_query_2d(2 ** DOMAIN_BITS, 2 ** DOMAIN_BITS, 0, 10)
     query = HyperRange.from_coords(list(c1), list(c2))
 
     search_tokens = hc.trapdoor(key, query)

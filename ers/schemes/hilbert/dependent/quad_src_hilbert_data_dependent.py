@@ -8,10 +8,10 @@ from ers.schemes.hilbert.hilbert import HilbertScheme
 from ers.structures.hyperrange import HyperRange
 from ers.structures.hyperrange_tree import HyperRangeTree
 from ers.structures.point import Point
-from ers.util.hyperrange.uniform_split_divider import UniformSplitDivider
+from ers.util.hyperrange.data_dependent_split_divider import DataDependentSplitDivider
 
 
-class QuadBRCHilbert(HilbertScheme):
+class QuadSRCHilbertDataDependent(HilbertScheme):
     def __init__(self, emm_engine: EMMEngine):
         super().__init__(emm_engine)
         self.tree = None
@@ -20,9 +20,8 @@ class QuadBRCHilbert(HilbertScheme):
         hilbert_plaintext_mm = self._hilbert_plaintext_mm(plaintext_mm)
 
         tree_height = self.dimensions * self.order
-        self.tree = HyperRangeTree.init(HyperRange.from_bits([tree_height]), UniformSplitDivider(2 ** self.dimensions))
-
-        print(self.tree)
+        self.tree = HyperRangeTree.init(HyperRange.from_bits([tree_height]),
+                                        DataDependentSplitDivider(2 ** self.dimensions, {Point([k]): hilbert_plaintext_mm[k] for k in hilbert_plaintext_mm.keys()}))
 
         modified_db = defaultdict(list)
         for distance, vals in tqdm(hilbert_plaintext_mm.items()):
@@ -32,14 +31,14 @@ class QuadBRCHilbert(HilbertScheme):
 
         self.encrypted_db = self.emm_engine.build_index(key, modified_db)
 
-    def trapdoor(self, key: bytes, query: HyperRange, merging_tolerance: float = 0) -> Set[bytes]:
-        ranges = self.hc.brc_with_merging(query, merging_tolerance)
-
+    def trapdoor(self, key: bytes, query: HyperRange) -> Set[bytes]:
         trapdoors = set()
+        hilbert_range = self.hc.src(query)
 
-        for (start_distance, end_distance) in ranges:
-            for rng in self.tree.brc(HyperRange.from_coords([start_distance], [end_distance])):
-                label_bytes = rng.to_bytes()
-                trapdoors.add(self.emm_engine.trapdoor(key, label_bytes))
+        rng = self.tree.src(HyperRange.from_coords([hilbert_range[0]], [hilbert_range[1]]))
+        assert rng is not None
+
+        label_bytes = rng.to_bytes()
+        trapdoors.add(self.emm_engine.trapdoor(key, label_bytes))
 
         return trapdoors
