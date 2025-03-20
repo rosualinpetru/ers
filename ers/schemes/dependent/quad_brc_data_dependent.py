@@ -20,8 +20,6 @@ class QuadBRCDataDependent(EMM):
     def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
         self.tree = HyperRangeTree.init(HyperRange.from_bits(self.emm_engine.DIMENSIONS_BITS), DataDependentSplitDivider(2, plaintext_mm))
 
-        print(self.tree)
-
         modified_db = defaultdict(list)
         for point, vals in tqdm(plaintext_mm.items()):
             assert point.dimensions() == self.dimensions

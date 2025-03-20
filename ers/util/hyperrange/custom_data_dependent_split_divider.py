@@ -38,11 +38,12 @@ class CustomDataDependentSplitDivider(HyperRangeDivider):
     @staticmethod
     def _divide_segment_by_density(start: int, end: int, dimension_distribution: dict[int, int], splits: int):
         if splits >= end - start + 1:
-            return [(i, i) for i in range(start, end + 1) ]
+            return [(i, i) for i in range(start, end + 1)]
 
         values = list(range(start, end + 1))
         densities = [dimension_distribution.get(i, 0) for i in values]
 
+        # Compute cumulative distribution function (CDF)
         cdf = []
         cumulative = 0
         for density in densities:
@@ -53,22 +54,23 @@ class CustomDataDependentSplitDivider(HyperRangeDivider):
 
         target_densities = [total_density * i // splits for i in range(splits + 1)]
 
-        segment_points = []
+        segment_points = [start]  # First point is always `start`
+
         idx = 0
-        for target in target_densities:
-            while idx < len(cdf) and cdf[idx] < target:
+        for i in range(1, splits):  # We already placed `start`, and will place `end` last
+            remaining_needed = splits + 1 - len(segment_points)  # Points still needed
+
+            while cdf[idx] < target_densities[i] and (end - (start + idx) ) >= remaining_needed:
                 idx += 1
 
-            segment_points.append(start + idx)
+            next_point = start + idx
+            segment_points.append(next_point)
+            idx += 1
 
-        for i in range(0, len(segment_points) // 2):
-            if segment_points[i] == segment_points[i+1]:
-                segment_points[i+1] += 1
-
-            if segment_points[len(segment_points) - 1 - i] == segment_points[len(segment_points) - 2 - i]:
-                segment_points[len(segment_points) - 2 - i] -= 1
+        segment_points.append(end)
 
 
+        # Construct segments
         # Avoid duplicates and ensure segments are disjoint
         segments = []
         last_point = segment_points[0]
@@ -76,9 +78,12 @@ class CustomDataDependentSplitDivider(HyperRangeDivider):
             segments.append((last_point, point))
             last_point = point + 1
 
-        # Adjust the last segment to end exactly at `end`
+        # Adjust the last segment to end exactly at end
         if segments:
             segments[-1] = (segments[-1][0], end)
+
+        for (f, s) in segments:
+            assert f <= s
 
         return segments
 
