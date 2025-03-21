@@ -96,7 +96,7 @@ The benchmark output will be in the **benchmarks** folder.
 
 ### Observations
 
-* The Linear and LinearHilbert schemes are equivalent in terms of security and index size; can be proven trivially. Still they differ in computational efficiency as the schemes differ in the algorithm by which they traverse all points within a query bounding box (HyperRange).
+* The Linear and LinearHilbert schemes are equivalent in terms of security and index size; can be proven trivially. Still they differ in computational efficiency as the schemes differ in the algorithm by which they traverse all points within a query bounding box (HyperRange). LinearHilbert appears to be faster when the query is large and there are multiple dimensions. 
 * The QuadBRC, QuadSRC and QuadBRCHilbert, QuadSRCHilbert, respectively, are equivalent in terms of security and index size. This is because the way Quad schemes recursively divide a HyperRange is equivalent to the construction of the Hilbert curves. In other words, the index built by all four schemes are equivalent (for splitting always in half, the number of nodes being the of geometric progression with a = 1, r = 2^d, n = d + 1, where d is dimensions) with the only difference being the representation of the range within a node (former schemes define ranges as bounding boxes, while the latter by a contiguous Hilbert segment).
 * The RangeBRC, TdagSRC and RangeBRCHilbert, TdagSRCHilbert, respectively, are NOT equivalent in terms of security and index size. This is because the Hilbert versions do not index ranges that are not represented by a single, **contiguous** Hilbert segment. The intuition is give by the following example: Consider a 2D domain space of size 2, represented by the HyperRange (0,0) X (3,3) the corresponding Hilbert curve, and a splitting in half strategy. In RangeBRC the multi-dimensional tree indexes the HyperRange (0,0) X (3,1), whereas the Hilbert versions do not because this is represented by two discontinuous Hilbert segments: [0, 3] and [12, 15].
 
@@ -115,6 +115,8 @@ A data-dependent scheme involves:
 See the implementation in the ("CustomDataDependentSplitDivider").
 
 This adaptive indexing approach usually requires the client to retain additional information or state, as the search trapdoors must be consistent with the specific dataset-dependent index structure.
+
+Nevertheless, it should be important to note that if the index becomes data-dependent, so should the queries. In other words, we would use data-dependent schemes knowing that particular queries have a higher probability of being asked on the specific dataset (e.g., considering age and a medical condition, it might be the case that a particular age range is associated with a particular medical condition, dependently).
 
 ### License
 

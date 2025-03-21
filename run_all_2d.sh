@@ -1,10 +1,10 @@
 #!/bin/bash
 
-datasets=("dense_2d" "spitz" "cali" "gowalla")
-schemes=("linear" "range_brc" "tdag_src" "quad_brc" "quad_src" "linear_hilbert" "range_brc_hilbert" "tdag_src_hilbert" "quad_brc_hilbert" "quad_src_hilbert")
+datasets=("dense_2d")
+schemes=("linear" "linear_hilbert" "quad_brc" "quad_brc_hilbert")
 
 for dataset in "${datasets[@]}"; do
   for scheme in "${schemes[@]}"; do
-    ./"$dataset".sh "scheme"
+    ./"$dataset".sh "$scheme"
   done
 done

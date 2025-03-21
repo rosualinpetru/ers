@@ -3,7 +3,7 @@ from argparse import Namespace
 from datetime import datetime
 
 from ers.benchmark.benchmark import run_benchmark
-from ers.benchmark.util.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d
+from ers.benchmark.util.dataset_generator import generate_cali, generate_spitz, generate_gowalla, generate_dense_database_2d, generate_nh_64, generate_random_database_2d, generate_dense_database_3d
 from ers.schemes.dependent.quad_brc_data_dependent import QuadBRCDataDependent
 from ers.schemes.dependent.quad_src_data_dependent import QuadSRCDataDependent
 from ers.schemes.dependent.range_brc_data_dependent import RangeBRCDataDependent
@@ -66,6 +66,9 @@ def get_dataset(dataset_name: str, domain_size: int, records_limit: int):
         case "random_2d":
             d = generate_random_database_2d(domain_size, records_limit)
             dim = 2
+        case "dense_3d":
+            d = generate_dense_database_3d(domain_size, records_limit)
+            dim = 3
         case "nh_64":
             d = generate_nh_64()
             dim = 3

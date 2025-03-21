@@ -66,9 +66,9 @@ def generate_query_bucks(
 
 
 def run_query(target_bucket, query, scheme, key, dataset):
-    t0 = time.time_ns()
+    t0 = time.perf_counter()
     trapdoors = scheme.trapdoor(key, query)
-    t1 = time.time_ns()
+    t1 = time.perf_counter()
 
     trapdoor_time = t1 - t0
 
@@ -79,16 +79,16 @@ def run_query(target_bucket, query, scheme, key, dataset):
         trapdoor_size = sys.getsizeof(trapdoors)
         trapdoor_count = 1
 
-    t0 = time.time_ns()
+    t0 = time.perf_counter()
     encrypted_results = scheme.search(trapdoors)
-    t1 = time.time_ns()
+    t1 = time.perf_counter()
 
     search_time = t1 - t0
     search_count = len(encrypted_results)
 
-    t0 = time.time_ns()
+    t0 = time.perf_counter()
     all_positives = scheme.resolve(key, encrypted_results)
-    t1 = time.time_ns()
+    t1 = time.perf_counter()
 
     resolve_time = t1 - t0
 
@@ -132,12 +132,12 @@ def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_
     scheme = scheme_constructor(EMMEngine(dimensions * [domain_size], dimensions))
     key = scheme.setup(16)
 
-    t0 = time.time_ns()
+    t0 = time.perf_counter()
     scheme.build_index(key, dataset)
-    t1 = time.time_ns()
+    t1 = time.perf_counter()
 
     index_build_time = t1 - t0
-    xlsx_util.write_to_page("index_time", [index_build_time / 10 ** 9])
+    xlsx_util.write_to_page("index_time", [index_build_time])
 
     encrypted_database_size = sum(sys.getsizeof(k) + sys.getsizeof(v) for k, v in scheme.encrypted_db.items())
     xlsx_util.write_to_page("index_size", [encrypted_database_size])
@@ -188,7 +188,7 @@ def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_
             precision_map[tb].append(result["precision"])
 
     for bucket, trapdoor_times in trapdoor_time_map.items():
-        xlsx_util.write_to_page("trapdoor_time", [bucket, (sum(trapdoor_times) / len(trapdoor_times)) / 10 ** 9])
+        xlsx_util.write_to_page("trapdoor_time", [bucket, (sum(trapdoor_times) / len(trapdoor_times))])
 
     for bucket, trapdoor_sizes in trapdoor_size_map.items():
         xlsx_util.write_to_page("trapdoor_size", [bucket, math.floor(sum(trapdoor_sizes) / len(trapdoor_sizes))])
@@ -197,13 +197,13 @@ def run_benchmark(report_name, scheme_constructor, dimensions, dataset, queries_
         xlsx_util.write_to_page("trapdoor_count", [bucket, math.floor(sum(trapdoor_counts) / len(trapdoor_counts))])
 
     for bucket, search_times in search_time_map.items():
-        xlsx_util.write_to_page("search_time", [bucket, (sum(search_times) / len(search_times)) / 10 ** 9])
+        xlsx_util.write_to_page("search_time", [bucket, (sum(search_times) / len(search_times))])
 
     for bucket, search_counts in search_count_map.items():
         xlsx_util.write_to_page("search_count", [bucket, math.floor(sum(search_counts) / len(search_counts))])
 
     for bucket, resolve_times in resolve_time_map.items():
-        xlsx_util.write_to_page("resolve_time", [bucket, (sum(resolve_times) / len(resolve_times)) / 10 ** 9])
+        xlsx_util.write_to_page("resolve_time", [bucket, (sum(resolve_times) / len(resolve_times))])
 
     for bucket, precisions in precision_map.items():
         if any(x < 0 for x in precisions):

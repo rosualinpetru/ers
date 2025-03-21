@@ -161,6 +161,28 @@ def generate_dense_database_2d(domain_size: int, records_limit: int) -> Dict[Tup
 
     return dict(dataset)
 
+def generate_dense_database_3d(domain_size: int, records_limit: int) -> Dict[Tuple[int, int, int], List[bytes]]:
+    if records_limit <= 0:
+        return {}
+
+    max_possible_records = (2 ** domain_size) * (2 ** domain_size)
+    if records_limit >= max_possible_records:
+        step = 1
+    else:
+        step = max_possible_records // records_limit
+
+    dataset = defaultdict(list)
+    i = 0
+    count = 0
+    for x, y, z in itertools.product(range(2 ** domain_size), range(2 ** domain_size), range(2 ** domain_size)):
+        if i % step == 0:
+            dataset[(x, y, z)].append(bytes(str([x, y, z]), 'utf-8'))
+            count += 1
+            if count >= records_limit:
+                break
+        i += 1
+
+    return dict(dataset)
 
 def generate_random_database_2d(domain_size: int, records_limit: int) -> Dict[Tuple[int, int], List[bytes]]:
     dataset = defaultdict(list)
