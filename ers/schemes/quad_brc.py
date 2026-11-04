@@ -1,51 +1,22 @@
-from collections import defaultdict
-from typing import Dict, List, Set
+"""
+Quad-BRC scheme (Falzon et al.).
 
-from tqdm import tqdm
+A single tree over the whole domain that halves every dimension at each level
+(a quadtree in 2-D, an octree in 3-D). Queries use the Best Range Cover and
+are exact. Compared with the range tree product, the index is much smaller
+(each point lies in one node per level instead of a product of nodes) and the
+covers are larger.
+"""
 
-from .common.emm import EMM
-from .common.emm_engine import EMMEngine
-from ..structures.hyperrange import HyperRange
-from ..structures.hyperrange_tree import HyperRangeTree
-from ..structures.point import Point
-from ..util.hyperrange.uniform_split_divider import UniformSplitDivider
+from typing import Dict, List
+
+from ers.schemes.common.structure_builders import uniform_tree
+from ers.schemes.common.structured_scheme import BestRangeCover, RangeSupportingStructure
+from ers.structures.point import Point
 
 
-class QuadBRC(EMM):
-    def __init__(self, emm_engine: EMMEngine):
-        super().__init__(emm_engine)
-        self.tree = None
-        self.encrypted_db = None
+class QuadBRC(BestRangeCover):
+    """A Best-Range-Cover scheme over a single quadtree-style range tree."""
 
-    def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        self.tree = HyperRangeTree.init(HyperRange.from_bits(self.emm_engine.DIMENSIONS_BITS), UniformSplitDivider(2))
-
-        modified_db = defaultdict(list)
-        for point, vals in tqdm(plaintext_mm.items()):
-            assert point.dimensions() == self.dimensions
-
-            for rng in self.tree.descend(point):
-                label = rng.to_bytes()
-                modified_db[label].extend(vals)
-
-        self.encrypted_db = self.emm_engine.build_index(key, modified_db)
-
-    def trapdoor(self, key: bytes, query: HyperRange) -> Set[bytes]:
-        trapdoors = set()
-
-        for rng in self.tree.brc(query):
-            label = rng.to_bytes()
-            trapdoors.add(self.emm_engine.trapdoor(key, label))
-
-        return trapdoors
-
-    def search(self, trapdoors: Set[bytes]) -> Set[bytes]:
-        results = set()
-
-        if self.encrypted_db is None:
-            raise ValueError("Index is not built yet!")
-
-        for trapdoor in trapdoors:
-            results = results.union(self.emm_engine.search(trapdoor, self.encrypted_db))
-
-        return results
+    def _build_structure(self, indexed_mm: Dict[Point, List[bytes]]) -> RangeSupportingStructure:
+        return uniform_tree(self.emm_engine.DIMENSIONS_BITS, 2)

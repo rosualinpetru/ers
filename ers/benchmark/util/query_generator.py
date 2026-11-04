@@ -1,17 +1,39 @@
+"""
+Random range-query generators for the benchmarks.
+
+Provides uniformly random 2D/3D range queries as well as "bucket" queries whose
+area/volume falls within a target selectivity band (a percentage window of the
+whole domain), so the benchmark can measure performance versus query size.
+"""
+
 import math
 import secrets
 from typing import Tuple
-
 
 ################################################################################################################
 # 2D
 ################################################################################################################
 
+
 def generate_random_point_2d(bound_x: int, bound_y: int) -> Tuple[int, int]:
+    """
+    Draws a uniformly random 2D point within the given bounds.
+
+    :param bound_x: Exclusive upper bound of the x coordinate.
+    :param bound_y: Exclusive upper bound of the y coordinate.
+    :return: A random (x, y) point.
+    """
     return secrets.randbelow(bound_x), secrets.randbelow(bound_y)
 
 
 def generate_random_query_2d(bound_x: int, bound_y: int) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    """
+    Draws a uniformly random 2D range query as an ordered (start, end) point pair.
+
+    :param bound_x: Exclusive upper bound of the x coordinate.
+    :param bound_y: Exclusive upper bound of the y coordinate.
+    :return: A pair of points ``(p1, p2)`` with ``p1 <= p2`` in each dimension.
+    """
     while True:
         p1 = generate_random_point_2d(bound_x, bound_y)
         p2 = generate_random_point_2d(bound_x, bound_y)
@@ -22,6 +44,20 @@ def generate_random_query_2d(bound_x: int, bound_y: int) -> Tuple[Tuple[int, int
 
 
 def generate_bucket_query_2d(bound_x: int, bound_y: int, bucket_index: int, bucket_size: int) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+    """
+    Generates a 2D range query whose area lands in a target selectivity bucket.
+
+    The bucket ``[bucket_index * bucket_size, (bucket_index + 1) * bucket_size]``
+    percent of the total area defines an ``[min_area, max_area]`` window; a random
+    width/height with area inside that window is chosen, then placed at a random
+    in-bounds position.
+
+    :param bound_x: Exclusive upper bound of the x coordinate.
+    :param bound_y: Exclusive upper bound of the y coordinate.
+    :param bucket_index: Index of the selectivity bucket.
+    :param bucket_size: Width of each bucket, in percent of the total area.
+    :return: A pair of points ``((x1, y1), (x2, y2))`` bounding the query rectangle.
+    """
     total_area = (bound_x - 1) * (bound_y - 1)
     min_area = math.ceil((bucket_index * bucket_size) / 100.0 * total_area)
     max_area = math.floor(((bucket_index + 1) * bucket_size) / 100.0 * total_area)
@@ -62,10 +98,26 @@ def generate_bucket_query_2d(bound_x: int, bound_y: int, bucket_index: int, buck
 
 
 def generate_random_point_3d(bound_x: int, bound_y: int, bound_z: int) -> Tuple[int, int, int]:
+    """
+    Draws a uniformly random 3D point within the given bounds.
+
+    :param bound_x: Exclusive upper bound of the x coordinate.
+    :param bound_y: Exclusive upper bound of the y coordinate.
+    :param bound_z: Exclusive upper bound of the z coordinate.
+    :return: A random (x, y, z) point.
+    """
     return secrets.randbelow(bound_x), secrets.randbelow(bound_y), secrets.randbelow(bound_z)
 
 
 def generate_random_query_3d(bound_x: int, bound_y: int, bound_z: int) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+    """
+    Draws a uniformly random 3D range query as an ordered (start, end) point pair.
+
+    :param bound_x: Exclusive upper bound of the x coordinate.
+    :param bound_y: Exclusive upper bound of the y coordinate.
+    :param bound_z: Exclusive upper bound of the z coordinate.
+    :return: A pair of points ``(p1, p2)`` with ``p1 <= p2`` in each dimension.
+    """
     while True:
         p1 = generate_random_point_3d(bound_x, bound_y, bound_z)
         p2 = generate_random_point_3d(bound_x, bound_y, bound_z)
@@ -75,7 +127,23 @@ def generate_random_query_3d(bound_x: int, bound_y: int, bound_z: int) -> Tuple[
     return p1, p2
 
 
-def generate_bucket_query_3d(bound_x: int, bound_y: int, bound_z: int, bucket_index: int, bucket_size: int) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+def generate_bucket_query_3d(
+    bound_x: int, bound_y: int, bound_z: int, bucket_index: int, bucket_size: int
+) -> Tuple[Tuple[int, int, int], Tuple[int, int, int]]:
+    """
+    Generates a 3D range query whose volume lands in a target selectivity bucket.
+
+    The 3D analogue of :func:`generate_bucket_query_2d`: it picks random
+    width/height/depth whose product falls within the bucket's ``[min_volume,
+    max_volume]`` window, then places the box at a random in-bounds position.
+
+    :param bound_x: Exclusive upper bound of the x coordinate.
+    :param bound_y: Exclusive upper bound of the y coordinate.
+    :param bound_z: Exclusive upper bound of the z coordinate.
+    :param bucket_index: Index of the selectivity bucket.
+    :param bucket_size: Width of each bucket, in percent of the total volume.
+    :return: A pair of points ``((x1, y1, z1), (x2, y2, z2))`` bounding the query box.
+    """
     total_volume = (bound_x - 1) * (bound_y - 1) * (bound_z - 1)
     min_volume = math.ceil((bucket_index * bucket_size) / 100.0 * total_volume)
     max_volume = math.floor(((bucket_index + 1) * bucket_size) / 100.0 * total_volume)

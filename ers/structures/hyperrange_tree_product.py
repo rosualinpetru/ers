@@ -1,14 +1,15 @@
 from itertools import product
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from ers.structures.hyperrange import HyperRange
 from ers.structures.hyperrange_tree import HyperRangeTree
-from ers.structures.point import Point
 
 
 class HyperRangeTreeProduct:
     """
-    Represents a product of multiple HyperRangeTree instances.
+    Represents a product of multiple HyperRangeTree instances: the
+    multi-dimensional range tree (or TDAG) of Falzon et al., whose nodes are
+    tuples of per-dimension nodes.
 
     This class provides methods for initializing a product tree, descending through the structure,
     and computing best range covering (BRC) and single region covering (SRC) for a given range.
@@ -23,23 +24,32 @@ class HyperRangeTreeProduct:
         self.trees = trees
         self.dimensions = sum([t.dimensions for t in self.trees])
 
-    def descend(self, point: Point) -> List[HyperRange]:
+    def descend(self, rng: HyperRange) -> List[HyperRange]:
         """
-        Finds all HyperRanges containing the given point in the product space.
+        Finds all product nodes containing the given range: the product of the
+        per-dimension root-to-leaf paths of its projections.
 
-        :param point: A Point in the multi-dimensional space.
-        :return: A list of HyperRanges covering the point.
+        :param rng: A HyperRange in the product space (typically a single point).
+        :return: A list of HyperRanges containing ``rng``.
         """
-        assert point.dimensions() == self.dimensions
+        assert rng.dimensions == self.dimensions
 
         descended_paths = []
-        processed_dimensions = 0
-        for t in self.trees:
-            reduced_point = point[processed_dimensions: processed_dimensions + t.dimensions]
-            descended_paths.append(t.descend(HyperRange.from_point_coords(reduced_point)))
-            processed_dimensions += t.dimensions
+        for t, reduced_rng in self.__project(rng):
+            descended_paths.append(t.descend(reduced_rng))
 
         return [self.__product_of_hyperranges_to_hyperrange(p) for p in product(*descended_paths)]
+
+    def __project(self, rng: HyperRange) -> List[Tuple[HyperRangeTree, HyperRange]]:
+        """Pairs every tree with the projection of ``rng`` onto that tree's dimensions."""
+        projections = []
+        processed_dimensions = 0
+        for t in self.trees:
+            reduced_start = rng.start[processed_dimensions : processed_dimensions + t.dimensions]
+            reduced_end = rng.end[processed_dimensions : processed_dimensions + t.dimensions]
+            projections.append((t, HyperRange.from_coords(reduced_start, reduced_end)))
+            processed_dimensions += t.dimensions
+        return projections
 
     def brc(self, rng: HyperRange) -> List[HyperRange]:
         """
@@ -51,14 +61,7 @@ class HyperRangeTreeProduct:
         """
         assert rng.dimensions == self.dimensions
 
-        dimensions_covers = []
-        processed_dimensions = 0
-        for t in self.trees:
-            reduced_start = rng.start[processed_dimensions: processed_dimensions + t.dimensions]
-            reduced_end = rng.end[processed_dimensions:processed_dimensions + t.dimensions]
-            reduced_rng = HyperRange.from_coords(reduced_start, reduced_end)
-            dimensions_covers.append(t.brc(reduced_rng))
-            processed_dimensions += t.dimensions
+        dimensions_covers = [t.brc(reduced_rng) for t, reduced_rng in self.__project(rng)]
 
         return [self.__product_of_hyperranges_to_hyperrange(p) for p in product(*dimensions_covers)]
 
@@ -73,16 +76,11 @@ class HyperRangeTreeProduct:
         assert rng.dimensions == self.dimensions
 
         dimensions_covers = []
-        processed_dimensions = 0
-        for t in self.trees:
-            reduced_start = rng.start[processed_dimensions: processed_dimensions + t.dimensions]
-            reduced_end = rng.end[processed_dimensions: processed_dimensions + t.dimensions]
-            reduced_rng = HyperRange.from_coords(reduced_start, reduced_end)
+        for t, reduced_rng in self.__project(rng):
             partial_src = t.src(reduced_rng)
             if partial_src is None:
                 return None
             dimensions_covers.append([partial_src])
-            processed_dimensions += t.dimensions
 
         cover = [self.__product_of_hyperranges_to_hyperrange(p) for p in product(*dimensions_covers)]
         assert len(cover) == 1

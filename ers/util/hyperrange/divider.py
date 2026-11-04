@@ -1,3 +1,11 @@
+"""
+HyperRange divider interface.
+
+Defines the abstract strategy that :class:`HyperRangeTree` uses to split a node
+into children. Concrete subclasses implement uniform, mid-overlap, and
+data-dependent partitioning of a HyperRange.
+"""
+
 from typing import List
 
 from ers.structures.hyperrange import HyperRange
@@ -16,5 +24,6 @@ class HyperRangeDivider:
 
         :param rng: The HyperRange to be divided.
         :return: A list of smaller HyperRanges resulting from the division.
+        :raises NotImplementedError: Always; subclasses must override.
         """
-        pass
+        raise NotImplementedError

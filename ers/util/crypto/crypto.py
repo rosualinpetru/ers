@@ -1,8 +1,15 @@
+"""
+Cryptographic primitives used by the EMM engine (research code; not for production).
 
+Thin wrappers over ``cryptography``: SHA-512 hashing and HMAC, HKDF-based key
+derivation, AES-CBC encryption with a random IV, PBKDF2, and a secure random
+source. The engine uses :func:`Hash`, :func:`HMAC`, :func:`HashKDF`,
+:func:`SymmetricEncrypt`/:func:`SymmetricDecrypt` and :func:`SecureRandom`.
+"""
 
 import os
 
-from cryptography.hazmat.primitives import hashes, hmac, constant_time
+from cryptography.hazmat.primitives import constant_time, hashes, hmac
 from cryptography.hazmat.primitives import padding as sym_padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
@@ -11,12 +18,10 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 def check_type(arg, corr_type, param_name: str, func_name: str) -> None:
     """
-    A helper function for argument type checking.
+    Raises a descriptive ``TypeError`` when ``arg`` is not of type ``corr_type``.
     """
     if not isinstance(arg, corr_type):
-        print(f'\nParameter "{param_name}" to {func_name} must of type {corr_type}!')
-        print(f"Instead, it is: {type(arg)}\n")
-        raise TypeError
+        raise TypeError(f'Parameter "{param_name}" to {func_name} must be of type {corr_type}, not {type(arg)}')
 
 
 def Hash(data: bytes) -> bytes:

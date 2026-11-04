@@ -1,3 +1,7 @@
+"""
+Integer grid points of a multi-dimensional domain.
+"""
+
 import functools
 from typing import List
 
@@ -6,18 +10,32 @@ from ers.util.serialization import serialization
 
 @functools.total_ordering
 class Point:
-    def dimensions(self):
-        return self.__dimensions
+    """
+    An immutable point of a ``d``-dimensional integer grid.
 
-    def coords(self):
-        return self.__coords[:]
+    Points are hashable (usable as multi-map keys) and ordered by *strict
+    dominance*: ``p < q`` holds only if every coordinate of ``p`` is strictly
+    smaller than the corresponding coordinate of ``q``; points that are not
+    comparable that way are neither smaller nor greater.
+    """
 
     def __init__(self, coords: List[int]):
-        self.__coords = coords
+        """
+        :param coords: The coordinates; copied, so later changes to the list do not affect the point.
+        :raises ValueError: If ``coords`` is empty.
+        """
+        if len(coords) == 0:
+            raise ValueError("Cannot create zero-dimensional point")
+        self.__coords = list(coords)
         self.__dimensions = len(coords)
 
-        if len(self.__coords) == 0:
-            raise ValueError("Cannot create zero-dimensional point")
+    def dimensions(self) -> int:
+        """The number of coordinates."""
+        return self.__dimensions
+
+    def coords(self) -> List[int]:
+        """A copy of the coordinates."""
+        return self.__coords[:]
 
     def __eq__(self, other):
         if not isinstance(other, Point):

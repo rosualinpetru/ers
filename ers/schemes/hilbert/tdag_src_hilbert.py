@@ -1,43 +1,25 @@
-from collections import defaultdict
-from typing import Dict, List, Set
+"""
+TDAG-SRC scheme over the Hilbert curve.
 
-from tqdm import tqdm
+A single uniform TDAG (binary tree plus mid-overlap cousins) over the 1-D
+Hilbert domain, queried with the Single Range Cover of the ``[min, max]`` curve
+interval of the query. One token per query; the curve's excursions outside the
+rectangle between those two extremes come back as false positives.
 
-from ers.schemes.common.emm_engine import EMMEngine
-from ers.schemes.hilbert.hilbert import HilbertScheme
-from ers.structures.hyperrange import HyperRange
-from ers.structures.hyperrange_tree import HyperRangeTree
+Scale note: the TDAG is built over the *entire* ``2**(d*n)`` Hilbert domain,
+so this scheme is only practical for domains up to roughly ``2**14`` cells.
+"""
+
+from typing import Dict, List
+
+from ers.schemes.common.structure_builders import uniform_tree
+from ers.schemes.common.structured_scheme import RangeSupportingStructure
+from ers.schemes.hilbert.hilbert import HilbertSingleRangeCover
 from ers.structures.point import Point
-from ers.util.hyperrange.uniform_split_mid_overlap_divider import UniformSplitMidOverlapDivider
 
 
-class TdagSRCHilbert(HilbertScheme):
-    def __init__(self, emm_engine: EMMEngine):
-        super().__init__(emm_engine)
-        self.tdag = None
+class TdagSRCHilbert(HilbertSingleRangeCover):
+    """A Single-Range-Cover scheme over a 1-D TDAG of Hilbert distances."""
 
-    def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        hilbert_plaintext_mm = self._hilbert_plaintext_mm(plaintext_mm)
-
-        tdag_height = self.dimensions * self.order
-        self.tdag = HyperRangeTree.init(HyperRange.from_bits([tdag_height]), UniformSplitMidOverlapDivider(2))
-
-        modified_db = defaultdict(list)
-        for distance, vals in tqdm(hilbert_plaintext_mm.items()):
-            for rng in self.tdag.descend(HyperRange.from_point_coords([distance])):
-                label_bytes = rng.to_bytes()
-                modified_db[label_bytes].extend(vals)
-
-        self.encrypted_db = self.emm_engine.build_index(key, modified_db)
-
-    def trapdoor(self, key: bytes, query: HyperRange) -> Set[bytes]:
-        trapdoors = set()
-        hilbert_range = self.hc.src(query)
-
-        rng = self.tdag.src(HyperRange.from_coords([hilbert_range[0]], [hilbert_range[1]]))
-        assert rng is not None
-
-        label_bytes = rng.to_bytes()
-        trapdoors.add(self.emm_engine.trapdoor(key, label_bytes))
-
-        return trapdoors
+    def _build_structure(self, indexed_mm: Dict[Point, List[bytes]]) -> RangeSupportingStructure:
+        return uniform_tree([self.hilbert_bits], 2, mid_overlap=True)

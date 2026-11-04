@@ -1,4 +1,12 @@
-from typing import List
+"""
+Custom uniform HyperRange divider.
+
+Splits a HyperRange into equal-sized chunks along each dimension, using a
+per-dimension list of split counts. This is the workhorse divider behind the
+BRC/quadtree schemes.
+"""
+
+from typing import List, Optional
 
 from ers.structures.hyperrange import HyperRange
 from ers.util.hyperrange.divider import HyperRangeDivider
@@ -12,7 +20,7 @@ class CustomUniformSplitDivider(HyperRangeDivider):
     HyperRange accordingly. If a dimension cannot be split further, it is left unchanged.
     """
 
-    def __init__(self, num_splits_per_dim: List[int]):
+    def __init__(self, num_splits_per_dim: Optional[List[int]]):
         """
         Initializes the CustomUniformSplitDivider with the number of splits per dimension.
 
@@ -27,6 +35,7 @@ class CustomUniformSplitDivider(HyperRangeDivider):
         :param dim: The dimension index.
         :return: The number of splits for the given dimension.
         """
+        assert self.num_splits_per_dim is not None, "subclasses without a per-dim list must override this"
         return self.num_splits_per_dim[dim]
 
     def divide(self, rng: HyperRange) -> List[HyperRange]:

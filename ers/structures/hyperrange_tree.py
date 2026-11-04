@@ -1,4 +1,14 @@
-from typing import List, Tuple, Optional
+"""
+Range-supporting trees: a hierarchical decomposition of a HyperRange by a divider.
+
+A :class:`HyperRangeTree` is the generic range-supporting data structure of
+Falzon et al.: every node is a canonical range, the root is the whole domain,
+and children are produced by a :class:`HyperRangeDivider` (uniform or
+data-dependent cuts, with or without TDAG mid-overlap cousins). The tree offers
+the three cover rules (``brc``, ``src``, ``urc``) and ``descend`` for indexing.
+"""
+
+from typing import Dict, List, Optional, Tuple
 
 from ers.structures.hyperrange import HyperRange
 from ers.util.hyperrange.divider import HyperRangeDivider
@@ -30,75 +40,123 @@ class HyperRangeTree:
             assert c.dimensions == self.dimensions
 
     @classmethod
-    def init(cls, rng: HyperRange, division_strategy: HyperRangeDivider) -> "HyperRangeTree":
+    def init(cls, rng: HyperRange, division_strategy: HyperRangeDivider, _shared: Optional[Dict[HyperRange, "HyperRangeTree"]] = None) -> "HyperRangeTree":
         """
-        Constructs a HyperRangeTree using a division strategy.
+        Constructs the range-supporting DAG rooted at ``rng``.
+
+        Identical canonical ranges are built **once** and shared: when a
+        divider yields a range that already exists elsewhere (as the TDAG
+        mid-overlap dividers do -- a cousin's halves are the halves of its
+        two neighbours), the existing node is reused instead of growing a
+        duplicate subtree. This turns the "tree" into the directed acyclic
+        graph of Falzon et al. and keeps the node count linear in the domain;
+        a naive tree duplicates every cousin subtree and both the structure
+        and the index entries derived from it blow up exponentially in the
+        depth.
 
         :param rng: The root HyperRange.
         :param division_strategy: The strategy to divide the HyperRange.
-        :return: A HyperRangeTree instance.
+        :param _shared: Internal: the range -> node registry shared across the recursion.
+        :return: The root node.
         """
-        children = division_strategy.divide(rng)
+        shared: Dict[HyperRange, "HyperRangeTree"] = {} if _shared is None else _shared
+        if rng in shared:
+            return shared[rng]
 
+        children = division_strategy.divide(rng)
         if not children:
-            return cls([], rng, 0, division_strategy)
+            node = cls([], rng, 0, division_strategy)
         else:
-            nodes = [HyperRangeTree.init(c, division_strategy) for c in children]
-            max_children_height = max([c.height for c in nodes])
-            return cls(nodes, rng, max_children_height + 1, division_strategy)
+            nodes = [HyperRangeTree.init(c, division_strategy, shared) for c in children]
+            node = cls(nodes, rng, max(c.height for c in nodes) + 1, division_strategy)
+        shared[rng] = node
+        return node
+
+    def nodes(self) -> List["HyperRangeTree"]:
+        """Every distinct node reachable from this one, in depth-first order."""
+        seen = set()
+        result = []
+        stack: List["HyperRangeTree"] = [self]
+        while stack:
+            n = stack.pop()
+            if n.rng in seen:
+                continue
+            seen.add(n.rng)
+            result.append(n)
+            stack.extend(reversed(n.children))
+        return result
 
     def descend(self, rng: HyperRange) -> List[HyperRange]:
         """
-        Recursively retrieves all ranges that contain the given range.
+        Retrieves every distinct canonical range that contains the given range
+        (the root-to-leaf path in a tree; all such nodes in a DAG).
 
-        :param rng: The HyperRange to search within.
-        :return: A list of contained HyperRanges.
+        :param rng: The HyperRange to locate (typically a single point).
+        :return: The containing canonical ranges, each exactly once.
         """
-        if rng in self.rng:
-            result = [self.rng]
-            for c in self.children:
-                result.extend(c.descend(rng))
-            return result
-        else:
+        if rng not in self.rng:
             return []
+        seen = set()
+        result = []
+        stack: List["HyperRangeTree"] = [self]
+        while stack:
+            n = stack.pop()
+            if n.rng in seen or rng not in n.rng:
+                continue
+            seen.add(n.rng)
+            result.append(n.rng)
+            stack.extend(reversed(n.children))
+        return result
 
     def rc(self, rng: HyperRange) -> List[Tuple[int, HyperRange]]:
         """
-        Retrieves all ranges contained within the given range, along with their heights.
+        The maximal canonical ranges contained in ``rng`` (the range cover),
+        each exactly once, with their heights.
 
-        :param rng: The HyperRange to search within.
-        :return: A list of tuples containing height and corresponding HyperRange.
+        Only vertices intersecting ``rng`` are expanded: a vertex disjoint from
+        the query cannot have a descendant inside it, so the traversal costs
+        ``O(|cover| * height)`` instead of visiting the whole structure.
+
+        :param rng: The HyperRange to cover.
+        :return: A list of ``(height, canonical range)`` tuples.
         """
-        if self.rng in rng:
-            return [(self.height, self.rng)]
-        else:
-            result = []
-            for child in self.children:
-                for res in child.rc(rng):
-                    if res:
-                        result.append(res)
-            return result
+        seen = set()
+        result = []
+        stack: List["HyperRangeTree"] = [self]
+        while stack:
+            n = stack.pop()
+            if n.rng in seen or not n.rng.intersects(rng):
+                continue
+            seen.add(n.rng)
+            if n.rng in rng:
+                result.append((n.height, n.rng))
+            else:
+                stack.extend(reversed(n.children))
+        return result
 
     def src(self, rng: HyperRange) -> Optional[HyperRange]:
         """
-        Finds the single range covering the given range.
+        Finds the single smallest canonical range containing the given range.
 
         :param rng: The HyperRange to cover.
-        :return: The single HyperRange covering the given range.
+        :return: The smallest containing canonical range, or ``None`` if the
+            root does not contain ``rng``.
         """
-        if rng in self.rng:
-            results = []
-            for child in self.children:
-                result = child.src(rng)
-                if result is not None:
-                    results.append(result)
-
-            if results:
-                return min(results, key=lambda r: r.volume())
-            else:
-                return self.rng
-        else:
+        if rng not in self.rng:
             return None
+        best = self.rng
+        seen = set()
+        stack: List["HyperRangeTree"] = [self]
+        while stack:
+            n = stack.pop()
+            if n.rng in seen:
+                continue
+            seen.add(n.rng)
+            if rng in n.rng:
+                if n.rng.volume() < best.volume():
+                    best = n.rng
+                stack.extend(n.children)
+        return best
 
     def brc(self, rng: HyperRange) -> List[HyperRange]:
         """
@@ -171,6 +229,7 @@ class HyperRangeTree:
         root_height = self.height
 
         def helper(t: HyperRangeTree) -> str:
+            # Shared (DAG) nodes are printed under every parent, as a tree view.
             s = "|    " * (root_height - t.height) + str(t.rng) + " - H: " + str(t.height) + "\n"
             for c in t.children:
                 s += helper(c)

@@ -1,0 +1,65 @@
+# Packaging and tooling configuration for the ERS experiment code.
+#
+#   pip install -e .          # the library + benchmark harness
+#   pip install -e ".[dev]"   # plus pytest / ruff / pyright
+#
+# Ruff serves as both the linter and the formatter; pyright (basic) as the type
+# checker. VS Code's Pylance reads the [tool.pyright] section too.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ers"
+version = "1.2.0"
+description = "Range search on encrypted multi-attribute data: Hilbert-curve, R-tree, interactive and data-dependent schemes with a benchmark harness"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "cryptography>=42.0",
+    "numpy>=1.26",
+    "matplotlib>=3.8",
+    "hilbertcurve>=2.0.5",
+    "openpyxl>=3.1",
+    "pandas>=2.2",
+    "plotly>=5.18",
+    "dash>=2.15",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6", "pyright>=1.1.390"]
+
+[project.urls]
+Repository = "https://github.com/rosualinpetru/ers"
+Upstream = "https://github.com/cloudsecuritygroup/ers"
+
+[tool.setuptools.packages.find]
+include = ["ers*"]
+
+[tool.ruff]
+line-length = 160
+target-version = "py312"
+extend-exclude = [".venv", "benchmarks", "figures", "data", "docs"]
+
+[tool.ruff.lint]
+# E/W: pycodestyle errors and warnings (IDE squiggles),
+# F: pyflakes (unused imports/variables, undefined names),
+# I: import sorting.
+select = ["E", "F", "W", "I"]
+ignore = [
+    "E741", # ambiguous single-letter names — the math notation uses l, e, d
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Figure scripts import the package after fixing sys.path, by necessity.
+"scripts/*.py" = ["E402"]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+include = ["ers", "tests", "scripts"]
+exclude = [".venv", "benchmarks", "figures", "data", "docs", "**/__pycache__"]

@@ -1,4 +1,14 @@
-from typing import List
+"""
+Custom mid-overlap HyperRange divider.
+
+Splits a HyperRange uniformly like :class:`CustomUniformSplitDivider`, but also
+inserts overlapping "cousin" sub-ranges straddling each pair of adjacent chunks.
+These cousins turn the range tree into a TDAG: because a cousin covers the seam
+between two siblings, any query is guaranteed to be contained in a single node,
+which is what enables the Single-Range-Cover schemes.
+"""
+
+from typing import List, Optional
 
 from ers.structures.hyperrange import HyperRange
 from ers.util.hyperrange.divider import HyperRangeDivider
@@ -14,7 +24,7 @@ class CustomUniformSplitMidOverlapDivider(HyperRangeDivider):
     to ensure smoother transitions and avoid gaps in hierarchical space partitioning.
     """
 
-    def __init__(self, num_splits_per_dim: List[int]):
+    def __init__(self, num_splits_per_dim: Optional[List[int]]):
         """
         Initializes the CustomUniformSplitMidOverlapDivider with the number of splits per dimension.
 
@@ -29,6 +39,7 @@ class CustomUniformSplitMidOverlapDivider(HyperRangeDivider):
         :param dim: The dimension index.
         :return: The number of splits for the given dimension.
         """
+        assert self.num_splits_per_dim is not None, "subclasses without a per-dim list must override this"
         return self.num_splits_per_dim[dim]
 
     def divide(self, rng: HyperRange) -> List[HyperRange]:
@@ -103,7 +114,7 @@ class CustomUniformSplitMidOverlapDivider(HyperRangeDivider):
                     offset_end_coords[current_dim] = offset_end
 
                     offset_child = HyperRange.from_coords(offset_start_coords, offset_end_coords)
-                    if not offset_child in sub_ranges:
+                    if offset_child not in sub_ranges:
                         sub_ranges.insert(i + 1, offset_child)
                         i = i + 1
 

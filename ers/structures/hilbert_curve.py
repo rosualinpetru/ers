@@ -1,4 +1,12 @@
-from typing import List, Tuple, Iterable
+"""
+Hilbert curve mapping and the Hilbert-segment decomposition of range queries.
+
+Wraps the ``hilbertcurve`` package and adds the query-side algorithm: the
+set of contiguous curve intervals (*segments*) that exactly cover an
+axis-aligned range, with Moten's empirical segment merging.
+"""
+
+from typing import Iterable, List, Tuple
 
 from hilbertcurve.hilbertcurve import HilbertCurve as Hc
 
@@ -54,20 +62,26 @@ class HilbertCurve:
         """
         return [self.point_from_distance(distance) for distance in distances]
 
-    def brc(self, rng: HyperRange):
+    def brc(self, rng: HyperRange) -> List[Tuple[int, int]]:
         """
-        Computes the boundary region covering (BRC) of a given hyperrange.
+        Computes the exact Hilbert segments of a range (merging tolerance 0).
 
         :param rng: A HyperRange object defining the region.
-        :return: A list of tuples representing contiguous Hilbert distance ranges.
+        :return: A list of ``(start, end)`` tuples of contiguous Hilbert distances.
         """
         return self.brc_with_merging(rng, 0)
 
     def brc_with_merging(self, rng: HyperRange, segment_gap_tolerance: float) -> List[Tuple[int, int]]:
         """
-        Computes the best range cover (BRC) while allowing for merging of segments based on a gap tolerance.
+        Computes the Hilbert segments of a range, merging segments across short
+        curve excursions outside the range.
 
-        https://sequentialread.com/building-a-spatial-index-supporting-range-query-using-space-filling-hilbert-curve/
+        The curve enters and leaves the range only at cells on its boundary, so
+        the sorted boundary distances delimit every segment. Two consecutive
+        segments are merged when the excursion between them is shorter than
+        ``segment_gap_tolerance * volume(rng)``; tolerance 0 yields the exact
+        cover, a large tolerance yields the single ``[min, max]`` interval.
+        (Moten; Johnson, https://sequentialread.com/building-a-spatial-index-supporting-range-query-using-space-filling-hilbert-curve/)
 
         :param rng: A HyperRange object defining the region.
         :param segment_gap_tolerance: The allowed gap fraction for merging segments.

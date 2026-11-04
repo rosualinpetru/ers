@@ -1,3 +1,10 @@
+"""
+Uniform HyperRange divider (same fan-out in every dimension).
+
+Convenience subclass of :class:`CustomUniformSplitDivider` that applies a single
+split count to all dimensions instead of a per-dimension list.
+"""
+
 from ers.util.hyperrange.custom_uniform_split_divider import CustomUniformSplitDivider
 
 
@@ -18,11 +25,11 @@ class UniformSplitDivider(CustomUniformSplitDivider):
         super().__init__(None)
         self.num_splits = num_splits
 
-    def _num_splits_for_dim(self, _: int):
+    def _num_splits_for_dim(self, dim: int):
         """
         Returns the number of splits to apply for any given dimension.
 
-        :param _: The dimension index (ignored since the split is uniform).
+        :param dim: The dimension index (ignored: the fan-out is uniform).
         :return: The uniform number of splits across all dimensions.
         """
         return self.num_splits

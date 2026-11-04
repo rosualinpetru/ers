@@ -1,71 +1,58 @@
+"""
+Space downscaling for Hilbert queries (experimental; not wired into any scheme).
+
+Moten's empirical technique for very high curve orders: shrink the query by
+dropping low-order bits of every coordinate, compute the Hilbert segments on
+the coarser curve, and lift the resulting intervals back to the original
+order. The lifted cover is a superset of the exact one (the shrunken query is
+widened by one cell per dimension to avoid false negatives), so the technique
+trades precision for segment-computation time. See the report's discussion.
+"""
+
 from typing import List, Tuple
 
 from ers.structures.hyperrange import HyperRange
 
 
 class Scaler:
-    """
-    A utility class for scaling down or up multi-dimensional ranges while preserving structure.
+    """Downscales queries by whole bits and upscales Hilbert intervals back."""
 
-    The Scaler allows for controlled downscaling of coordinate values and upscaling of Hilbert curve ranges.
-    """
-
-    def __init__(self, bits: int):
+    def __init__(self, bits: int, dimensions: int):
         """
-        Initializes the Scaler with a specified bit depth.
-
-        :param bits: The number of bits defining the coordinate space.
+        :param bits: The per-dimension bit length of the original domain.
+        :param dimensions: The number of dimensions of the domain.
         """
         self.bits = bits
+        self.dimensions = dimensions
 
     def downscale(self, bits: int, query: HyperRange) -> HyperRange:
         """
-        Downscales a given HyperRange by reducing coordinate precision.
+        Drops ``bits`` low-order bits from every coordinate of the query and
+        widens the result by one cell per dimension (clamped to the reduced
+        domain) so that no point of the original query is lost.
 
-        :param bits: The number of downscaling iterations.
-        :param query: The HyperRange to be downscaled.
-        :return: A new HyperRange with reduced precision.
+        :param bits: The number of bits of precision to drop.
+        :param query: The query in the original domain.
+        :return: The widened query in the reduced domain.
         """
-        p1 = query.start.coords()
-        p2 = query.end.coords()
+        if bits <= 0:
+            return query
 
-        if bits > 0:
-            def downscale_point(p: List[int]):
-                for k, val in enumerate(p):
-                    half = val // 2
-                    p[k] = half + (val % half) if half != 0 else 0
-                return p
+        reduced_max_coordinate = (1 << (self.bits - bits)) - 1
+        start = [max(0, (c >> bits) - 1) for c in query.start.coords()]
+        end = [min(reduced_max_coordinate, (c >> bits) + 1) for c in query.end.coords()]
+        return HyperRange.from_coords(start, end)
 
-            for _ in range(bits):
-                p1 = downscale_point(p1)
-                p2 = downscale_point(p2)
-
-            reduced_max_coordinate = 1 << (self.bits - bits)
-
-            # Extend query by 1 on each dimension
-            for i, v in enumerate(p1):
-                p1[i] = max(0, v - 1)
-
-            for i, v in enumerate(p2):
-                p2[i] = min(reduced_max_coordinate, v + 1)
-
-        return HyperRange.from_coords(p1, p2)
-
-    @staticmethod
-    def _hilbert_upscale(bits: int, ranges: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    def upscale(self, bits: int, ranges: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
         """
-        Upscales Hilbert curve range values by shifting bits.
+        Lifts Hilbert intervals of the reduced curve back to the original
+        curve. Dropping ``bits`` bits per dimension drops ``bits * dimensions``
+        bits of curve distance, so each reduced cell expands to a block of
+        ``2 ** (bits * dimensions)`` consecutive distances.
 
-        :param bits: The bit shift factor for upscaling.
-        :param ranges: A list of tuple ranges representing Hilbert curve intervals.
-        :return: A list of upscaled ranges.
+        :param bits: The number of bits of precision that were dropped.
+        :param ranges: Intervals of reduced-curve distances.
+        :return: The corresponding intervals of original-curve distances.
         """
-        upscale_factor = bits * 2
-        upscaled_ranges = []
-
-        for rng in ranges:
-            start_curve_point = rng[0] << upscale_factor
-            end_curve_point = rng[1] << upscale_factor
-            upscaled_ranges.append((start_curve_point, end_curve_point))
-
-        return upscaled_ranges
+        shift = bits * self.dimensions
+        return [(lo << shift, ((hi + 1) << shift) - 1) for lo, hi in ranges]

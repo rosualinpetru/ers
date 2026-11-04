@@ -28,8 +28,9 @@ pip-delete-this-directory.txt
 .vscode/
 *.ipynb_checkpoints
 
-# Pytest cache
+# Pytest / ruff caches
 .pytest_cache/
+.ruff_cache/
 
 # mypy cache
 .mypy_cache/
@@ -51,5 +52,12 @@ coverage.xml
 
 # Cython debug symbols
 cython_debug/
-benchmarks/*
-queries/*
+# Benchmark reports and the cached query workloads are committed (the paper
+# is generated from them); superseded reports are not.
+benchmarks/superseded/
+
+# Regenerable figure outputs (committed copies live in docs/img/)
+figures/
+
+# Lean build artefacts
+lean/.lake/

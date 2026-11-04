@@ -1,20 +1,28 @@
-cffi==1.15.1
-contourpy==1.0.5
-cryptography==43.0.1
-cycler==0.11.0
-fonttools==4.43.0
-kiwisolver==1.4.4
-matplotlib==3.6.1
-numpy==1.26.4
-packaging==21.3
-Pillow==10.0.1
-pycparser==2.21
-pyparsing==3.0.9
-python-dateutil==2.8.2
-six==1.16.0
-tqdm==4.66.3
-hilbertcurve==2.0.5
-openpyxl==3.1.5
-dash==2.15.0
-pandas==2.2.3
-plotly==5.18.0
+# Direct dependencies for the ERS experiment code (mirrors pyproject.toml;
+# `pip install -e ".[dev]"` is the preferred route).
+# Lower bounds are the oldest versions verified to work; newer releases
+# (incl. Python 3.12-3.14 / NumPy 2.x / pandas 3.x) are supported too.
+
+# Cryptographic primitives (research use only)
+cryptography>=42.0
+
+# Numerics and plotting
+numpy>=1.26
+matplotlib>=3.8
+
+# Hilbert-curve mapping
+hilbertcurve>=2.0.5
+
+# Benchmark reporting and the report site
+openpyxl>=3.1
+pandas>=2.2
+plotly>=5.18
+dash>=2.15
+
+# Progress bars
+tqdm>=4.66
+
+# Development: tests, lint/format, type checking
+pytest>=8.0
+ruff>=0.6
+pyright>=1.1.390

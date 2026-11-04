@@ -1,14 +1,14 @@
+"""
+JSON serialization of index labels and payloads, with transparent ``bytes`` support.
 
+Labels of the encrypted multi-map are the serialized canonical ranges (lists of
+integer coordinates); the interactive scheme also serializes small lists of
+integers as metadata. ``bytes`` values are tagged base64 strings in the JSON.
+"""
 
 import base64
 import json
-
-
-def _print_bytes(b: bytes) -> None:
-    """
-    A helper function to print bytes as base64.
-    """
-    print(base64.b64encode(b).decode("utf-8"))
+from typing import Any
 
 
 def __bytes_to_b64(b: bytes) -> str:
@@ -33,7 +33,7 @@ def __detect_tags(s: str):
 
 def _prepare_bytes(o):
     """
-    A helper funtion for ObjectToBytes
+    Recursively replaces ``bytes`` by tagged base64 strings (helper for :func:`ObjectToBytes`).
     """
     if isinstance(o, dict):
         result = {}
@@ -63,15 +63,12 @@ def _prepare_bytes(o):
     elif isinstance(o, (int, str, float, bool)) or o is None:
         return o
     else:
-        print(
-            f"ERROR: Unserializable type {type(o)} detected! Valid types are [dict, list, int, str, float, bool, NoneType]"
-        )
-        raise ValueError
+        raise ValueError(f"Unserializable type {type(o)}: valid types are dict, list, bytes, int, str, float, bool, NoneType")
 
 
 def _repair_bytes(o):
     """
-    A helper funtion for ObjectToBytes
+    Recursively restores tagged base64 strings to ``bytes`` (helper for :func:`BytesToObject`).
     """
     if isinstance(o, dict):
         result = {}
@@ -108,10 +105,7 @@ def _repair_bytes(o):
     elif isinstance(o, (int, str, float, bool)) or o is None:
         return o
     else:
-        print(
-            f"ERROR: Undeserializable type {type(o)} detected! Valid types are [dict, list, int, str, float, bool, NoneType]"
-        )
-        raise ValueError
+        raise ValueError(f"Undeserializable type {type(o)}: valid types are dict, list, int, str, float, bool, NoneType")
 
 
 def ObjectToBytes(o: object) -> bytes:
@@ -135,9 +129,13 @@ def ObjectToBytes(o: object) -> bytes:
     return json.dumps(o).encode()
 
 
-def BytesToObject(b: bytes) -> object:
+def BytesToObject(b: bytes) -> Any:
     """
     A helper function that will deserialize bytes to an object using JSON. See caveats in ObjectToBytes().
+
+    Typed as ``Any`` because the shape of the result is determined by whatever
+    the caller serialized (nested lists/dicts of primitives and bytes) — the
+    call site knows the structure, the type system cannot.
     """
     obj = json.loads(b.decode())
     return _repair_bytes(obj)

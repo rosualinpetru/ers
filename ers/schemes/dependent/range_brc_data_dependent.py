@@ -1,53 +1,32 @@
-from collections import defaultdict
-from typing import Dict, List, Set
+"""
+Data-dependent Range-BRC scheme.
 
-from tqdm import tqdm
+:class:`~ers.schemes.range_brc.RangeBRC` with each per-dimension tree cut by
+the point mass of that dimension's marginal instead of by length. The cover
+rule (Best Range Cover) and exactness are unchanged; what changes is the shape
+of the canonical ranges, which now follow the data. The client must keep the
+tree (or the statistics to rebuild it) to derive consistent tokens.
+"""
 
-from ers.schemes.common.emm import EMM
-from ers.schemes.common.emm_engine import EMMEngine
-from ers.structures.hyperrange import HyperRange
-from ers.structures.hyperrange_tree import HyperRangeTree
-from ers.structures.hyperrange_tree_product import HyperRangeTreeProduct
+from typing import Dict, List
+
+from ers.schemes.common.structure_builders import data_dependent_tree_product
+from ers.schemes.common.structured_scheme import BestRangeCover, RangeSupportingStructure
 from ers.structures.point import Point
-from ers.util.hyperrange.data_dependent_split_divider import DataDependentSplitDivider
+from ers.util.hyperrange.custom_data_dependent_split_divider import MassWeight
 
 
-class RangeBRCDataDependent(EMM):
-    def __init__(self, emm_engine: EMMEngine):
-        super().__init__(emm_engine)
-        self.tree_product = None
-        self.encrypted_db = None
+class RangeBRCDataDependent(BestRangeCover):
+    """A Best-Range-Cover scheme over a product of mass-balanced per-dimension trees."""
 
-    def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        d1_trees = [HyperRangeTree.init(HyperRange.from_bits([h]), DataDependentSplitDivider(2, plaintext_mm)) for h in self.emm_engine.DIMENSIONS_BITS]
-        self.tree_product = HyperRangeTreeProduct(d1_trees)
+    #: How the divider counts mass: occupied cells (default) or records.
+    mass_weight: MassWeight = "cells"
 
-        modified_db = defaultdict(list)
-        for point, vals in tqdm(plaintext_mm.items()):
-            assert point.dimensions() == self.dimensions
+    def _build_structure(self, indexed_mm: Dict[Point, List[bytes]]) -> RangeSupportingStructure:
+        return data_dependent_tree_product(self.emm_engine.DIMENSIONS_BITS, indexed_mm, weight=self.mass_weight)
 
-            for rng in self.tree_product.descend(point):
-                label = rng.to_bytes()
-                modified_db[label].extend(vals)
 
-        self.encrypted_db = self.emm_engine.build_index(key, modified_db)
+class RangeBRCDataDependentRecords(RangeBRCDataDependent):
+    """:class:`RangeBRCDataDependent` balancing records instead of occupied cells."""
 
-    def trapdoor(self, key: bytes, query: HyperRange) -> Set[bytes]:
-        trapdoors = set()
-
-        for rng in self.tree_product.brc(query):
-            label = rng.to_bytes()
-            trapdoors.add(self.emm_engine.trapdoor(key, label))
-
-        return trapdoors
-
-    def search(self, trapdoors: Set[bytes]) -> Set[bytes]:
-        results = set()
-
-        if self.encrypted_db is None:
-            raise ValueError("Index is not built yet!")
-
-        for trapdoor in trapdoors:
-            results = results.union(self.emm_engine.search(trapdoor, self.encrypted_db))
-
-        return results
+    mass_weight = "records"

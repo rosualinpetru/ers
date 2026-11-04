@@ -1,44 +1,30 @@
-from collections import defaultdict
-from typing import Dict, List, Set
+"""
+Data-dependent Quad-SRC scheme over the Hilbert curve.
 
-from tqdm import tqdm
+The mass-balanced ``2**d``-ary 1-D tree queried with the Single Range Cover of
+the ``[min, max]`` curve interval of the query: one token per query.
+"""
 
-from ers.schemes.common.emm_engine import EMMEngine
-from ers.schemes.hilbert.hilbert import HilbertScheme
-from ers.structures.hyperrange import HyperRange
-from ers.structures.hyperrange_tree import HyperRangeTree
+from typing import Dict, List
+
+from ers.schemes.common.structure_builders import data_dependent_tree
+from ers.schemes.common.structured_scheme import RangeSupportingStructure
+from ers.schemes.hilbert.hilbert import HilbertSingleRangeCover
 from ers.structures.point import Point
-from ers.util.hyperrange.data_dependent_split_divider import DataDependentSplitDivider
+from ers.util.hyperrange.custom_data_dependent_split_divider import MassWeight
 
 
-class QuadSRCHilbertDataDependent(HilbertScheme):
-    def __init__(self, emm_engine: EMMEngine):
-        super().__init__(emm_engine)
-        self.tree = None
+class QuadSRCHilbertDataDependent(HilbertSingleRangeCover):
+    """A Single-Range-Cover scheme over a mass-balanced 1-D ``2**d``-ary tree of Hilbert distances."""
 
-    def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        hilbert_plaintext_mm = self._hilbert_plaintext_mm(plaintext_mm)
+    #: How the divider counts mass: occupied cells (default) or records.
+    mass_weight: MassWeight = "cells"
 
-        tree_height = self.dimensions * self.order
-        self.tree = HyperRangeTree.init(HyperRange.from_bits([tree_height]),
-                                        DataDependentSplitDivider(2 ** self.dimensions, {Point([k]): hilbert_plaintext_mm[k] for k in hilbert_plaintext_mm.keys()}))
+    def _build_structure(self, indexed_mm: Dict[Point, List[bytes]]) -> RangeSupportingStructure:
+        return data_dependent_tree([self.hilbert_bits], 2**self.dimensions, indexed_mm, weight=self.mass_weight)
 
-        modified_db = defaultdict(list)
-        for distance, vals in tqdm(hilbert_plaintext_mm.items()):
-            for rng in self.tree.descend(HyperRange.from_point_coords([distance])):
-                label_bytes = rng.to_bytes()
-                modified_db[label_bytes].extend(vals)
 
-        self.encrypted_db = self.emm_engine.build_index(key, modified_db)
+class QuadSRCHilbertDataDependentRecords(QuadSRCHilbertDataDependent):
+    """:class:`QuadSRCHilbertDataDependent` balancing records instead of occupied cells."""
 
-    def trapdoor(self, key: bytes, query: HyperRange) -> Set[bytes]:
-        trapdoors = set()
-        hilbert_range = self.hc.src(query)
-
-        rng = self.tree.src(HyperRange.from_coords([hilbert_range[0]], [hilbert_range[1]]))
-        assert rng is not None
-
-        label_bytes = rng.to_bytes()
-        trapdoors.add(self.emm_engine.trapdoor(key, label_bytes))
-
-        return trapdoors
+    mass_weight = "records"

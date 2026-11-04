@@ -1,53 +1,30 @@
-from collections import defaultdict
-from typing import Dict, List, Set
+"""
+Data-dependent Quad-SRC scheme.
 
-from tqdm import tqdm
+:class:`~ers.schemes.quad_src.QuadSRC` with the single multi-dimensional tree
+cut by point mass instead of by length. Queries use the Single Range Cover:
+one token for the smallest node containing the whole query.
+"""
 
-from ers.schemes.common.emm import EMM
-from ers.schemes.common.emm_engine import EMMEngine
-from ers.structures.hyperrange import HyperRange
-from ers.structures.hyperrange_tree import HyperRangeTree
+from typing import Dict, List
+
+from ers.schemes.common.structure_builders import data_dependent_tree
+from ers.schemes.common.structured_scheme import RangeSupportingStructure, SingleRangeCover
 from ers.structures.point import Point
-from ers.util.hyperrange.data_dependent_split_divider import DataDependentSplitDivider
+from ers.util.hyperrange.custom_data_dependent_split_divider import MassWeight
 
 
-class QuadSRCDataDependent(EMM):
-    def __init__(self, emm_engine: EMMEngine):
-        super().__init__(emm_engine)
-        self.tree = None
-        self.encrypted_db = None
+class QuadSRCDataDependent(SingleRangeCover):
+    """A Single-Range-Cover scheme over a single mass-balanced quadtree-style tree."""
 
-    def build_index(self, key: bytes, plaintext_mm: Dict[Point, List[bytes]]):
-        self.tree = HyperRangeTree.init(HyperRange.from_bits(self.emm_engine.DIMENSIONS_BITS), DataDependentSplitDivider(2, plaintext_mm))
+    #: How the divider counts mass: occupied cells (default) or records.
+    mass_weight: MassWeight = "cells"
 
-        modified_db = defaultdict(list)
-        for point, vals in tqdm(plaintext_mm.items()):
-            assert point.dimensions() == self.dimensions
+    def _build_structure(self, indexed_mm: Dict[Point, List[bytes]]) -> RangeSupportingStructure:
+        return data_dependent_tree(self.emm_engine.DIMENSIONS_BITS, 2, indexed_mm, weight=self.mass_weight)
 
-            for rng in self.tree.descend(point):
-                label = rng.to_bytes()
-                modified_db[label].extend(vals)
 
-        self.encrypted_db = self.emm_engine.build_index(key, modified_db)
+class QuadSRCDataDependentRecords(QuadSRCDataDependent):
+    """:class:`QuadSRCDataDependent` balancing records instead of occupied cells."""
 
-    def trapdoor(self, key: bytes, query: HyperRange) -> Set[bytes]:
-        trapdoors = set()
-
-        rng = self.tree.src(query)
-        assert rng is not None
-
-        label = rng.to_bytes()
-        trapdoors.add(self.emm_engine.trapdoor(key, label))
-
-        return trapdoors
-
-    def search(self, trapdoors: Set[bytes]) -> Set[bytes]:
-        results = set()
-
-        if self.encrypted_db is None:
-            raise ValueError("Index is not built yet!")
-
-        for trapdoor in trapdoors:
-            results = results.union(self.emm_engine.search(trapdoor, self.encrypted_db))
-
-        return results
+    mass_weight = "records"

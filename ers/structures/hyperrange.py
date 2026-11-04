@@ -1,9 +1,14 @@
+"""
+Axis-aligned ranges (hyperrectangles) of the integer grid: the queries and the
+canonical ranges of every range-supporting structure.
+"""
+
 import functools
 from itertools import product
 from typing import List
 
 from ers.structures.point import Point
-from ers.util.serialization.serialization import ObjectToBytes, BytesToObject
+from ers.util.serialization.serialization import BytesToObject, ObjectToBytes
 
 
 @functools.total_ordering
@@ -33,7 +38,7 @@ class HyperRange:
 
         for i in range(0, start.dimensions()):
             if start[i] > end[i]:
-                raise ValueError
+                raise ValueError(f"Range start {start} exceeds end {end} in dimension {i}")
 
     @classmethod
     def from_coords(cls, start: List[int], end: List[int]):
@@ -74,7 +79,7 @@ class HyperRange:
         :param bits: List of integers representing bit lengths.
         :return: A HyperRange instance.
         """
-        return HyperRange.from_coords([0] * len(bits), [2 ** b - 1 for b in bits])
+        return HyperRange.from_coords([0] * len(bits), [2**b - 1 for b in bits])
 
     @classmethod
     def from_bytes(cls, b: bytes):
@@ -107,6 +112,15 @@ class HyperRange:
                 return False
         return True
 
+    def intersects(self, other: "HyperRange") -> bool:
+        """
+        Checks whether two ranges share at least one cell.
+
+        :param other: Another HyperRange of the same dimensionality.
+        :return: True if the ranges overlap, False otherwise.
+        """
+        return all(self.start[i] <= other.end[i] and other.start[i] <= self.end[i] for i in range(self.dimensions))
+
     def points(self) -> List[Point]:
         """
         Generates all points within the range.
@@ -118,35 +132,31 @@ class HyperRange:
 
     def boundary_points(self) -> List[Point]:
         """
-        Computes the boundary points of the range.
+        Computes the boundary points of the range: every cell that has at least
+        one coordinate pinned to a face of the hyperrectangle.
+
+        In 2D this is the perimeter; in 3D it is the full surface (all six
+        faces, including their interiors), and so on for higher dimensions.
+        The Hilbert segment-finding algorithm relies on this set being the
+        complete set of cells where the curve can enter or leave the query,
+        so it must include face interiors, not just edges/corners --- otherwise
+        in-range Hilbert segments are missed and searches drop true positives.
 
         :return: A list of Point objects on the boundary.
         """
-        corners = list(product(*[[self.start[i], self.end[i]] for i in range(self.dimensions)]))
-        corners.sort()
+        seen = set()
+        boundary = []
+        for i in range(self.dimensions):
+            # Pin dimension i to each of its two faces (a single value if the
+            # range is degenerate in that dimension), and sweep the rest fully.
+            for face_value in {self.start[i], self.end[i]}:
+                axis_ranges = [[face_value] if j == i else range(self.start[j], self.end[j] + 1) for j in range(self.dimensions)]
+                for coords in product(*axis_ranges):
+                    if coords not in seen:
+                        seen.add(coords)
+                        boundary.append(Point(list(coords)))
 
-        perimeter_points = []
-        for c in corners:
-            perimeter_points.append(Point(list(c)))
-
-        for i in range(len(corners)):
-            for j in range(i + 1, len(corners)):
-                diff_index = None
-                diffs = 0
-                for idx, (v1, v2) in enumerate(zip(corners[i], corners[j])):
-                    if v1 != v2:
-                        diff_index = idx
-                        diffs += 1
-
-                if diffs != 1:
-                    continue
-
-                point = list(corners[i][:])
-                for new_v in range(corners[i][diff_index] + 1, corners[j][diff_index]):
-                    point[diff_index] = new_v
-                    perimeter_points.append(Point(point[:]))
-
-        return perimeter_points
+        return boundary
 
     def volume(self) -> int:
         """
@@ -156,7 +166,7 @@ class HyperRange:
         """
         p = 1
         for i in range(self.dimensions):
-            p *= (self.end[i] - self.start[i] + 1)
+            p *= self.end[i] - self.start[i] + 1
         return p
 
     def __str__(self):
