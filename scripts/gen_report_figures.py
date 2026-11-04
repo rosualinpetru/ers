@@ -394,28 +394,25 @@ def fig_nh3d(R: Reports, out: str):
 
 
 def fig_interactive_rounds(R: Reports, out: str):
-    """Token split per round for the two interactive variants, cali and spitz."""
+    """Round-two tokens of the two interactive variants, cali and spitz (round one is always one token)."""
     fig, axes = plt.subplots(1, 2, figsize=(DBL_W, 2.9), sharey=True)
     for ax, ds in zip(axes, ["cali", "spitz"]):
-        labels, r1, r2, cols = [], [], [], []
+        labels, r2, cols = [], [], []
         for s in ["interactive_src", "interactive_src_hilbert"]:
             for b in R.bits_for(s, ds, 2):
                 labels.append(f"{'native' if s == 'interactive_src' else 'Hilbert'}\n$2^{{{2 * b}}}$")
-                r1.append(R.mean(s, ds, 2, b, "trapdoor_count_round1") or 0)
                 r2.append(R.mean(s, ds, 2, b, "trapdoor_count_round2") or 0)
                 cols.append(style(s)["color"])
         xs = range(len(labels))
-        ax.bar(xs, r1, color=INK_MUTED, width=0.7, label="round 1 (metadata)")
-        ax.bar(xs, r2, bottom=r1, color=cols, width=0.7, label="round 2 (documents)", edgecolor="white", linewidth=1)
+        ax.bar(xs, r2, color=cols, width=0.7, edgecolor="white", linewidth=1)
         ax.set_xticks(list(xs))
         ax.set_xticklabels(labels, fontsize=8.5)
         ax.set_title(ds)
-        for x, a, b2 in zip(xs, r1, r2):
-            ax.annotate(f"{a + b2:.0f}", (x, a + b2), xytext=(0, 3), textcoords="offset points", ha="center", fontsize=8.5, color=INK_2)
+        for x, v in zip(xs, r2):
+            ax.annotate(f"{v:.0f}", (x, v), xytext=(0, 3), textcoords="offset points", ha="center", fontsize=8.5, color=INK_2)
         ax.grid(axis="x", visible=False)
-    axes[0].set_ylabel("tokens per query (mean)")
-    fig.legend(*axes[0].get_legend_handles_labels(), loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.06))
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    axes[0].set_ylabel("round-two tokens per query (mean)")
+    fig.tight_layout()
     save(fig, out, "fig_interactive_rounds")
 
 
