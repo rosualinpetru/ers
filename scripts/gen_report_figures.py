@@ -11,8 +11,10 @@ Usage::
 
     python3 scripts/gen_report_figures.py [--benchmarks benchmarks] [--out figures/report]
 
-Visual encoding (shared with the Dash report site): hue = scheme family,
-dashed line = Hilbert-linearised, diamond marker = data-dependent divider.
+Visual encoding (shared with the Dash report site): hue = scheme family;
+marker shape = domain and divider (native: circle / diamond / square for
+uniform / cell-balanced / record-balanced; Hilbert: triangle-up / triangle-down
+/ X); Hilbert series are additionally dashed.
 """
 
 import argparse
@@ -99,13 +101,26 @@ PRETTY = {
 }
 
 
+#: Marker by (domain, divider). Shape alone must separate native from Hilbert
+#: in a legend; the dashed line is a second cue, not the only one.
+MARKERS = {
+    (False, "uniform"): "o",  # native, uniform
+    (False, "cells"): "D",  # native, cell-balanced
+    (False, "records"): "s",  # native, record-balanced
+    (True, "uniform"): "^",  # Hilbert, uniform
+    (True, "cells"): "v",  # Hilbert, cell-balanced
+    (True, "records"): "X",  # Hilbert, record-balanced
+}
+
+
 def style(scheme: str) -> dict:
     t = parse_scheme(scheme)
+    divider = ("records" if t["records"] else "cells") if t["data_dependent"] else "uniform"
     return {
         "color": FAMILY_COLORS[t["family"]],
         "linestyle": "--" if t["hilbert"] else "-",
-        "marker": ("s" if t["records"] else "D") if t["data_dependent"] else "o",
-        "markersize": 4.2 if t["data_dependent"] else 5,
+        "marker": MARKERS[(t["hilbert"], divider)],
+        "markersize": 5.5 if t["hilbert"] else 5,
     }
 
 

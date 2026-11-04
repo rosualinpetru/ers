@@ -21,10 +21,11 @@ channels:
 
 * **hue** = scheme *family* (linear / range / TDAG / quad-BRC / quad-SRC /
   R-tree / interactive) — a fixed 7-slot colorblind-validated palette;
-* **line dash** = domain: solid for native multi-dimensional, dashed for
-  Hilbert-linearised;
-* **marker** = divider: circle for uniform, diamond for data-dependent
-  (cell-balanced), square for data-dependent record-balanced.
+* **marker shape** = domain and divider: native schemes use circle / diamond /
+  square (uniform / cell-balanced / record-balanced), Hilbert schemes use
+  triangle-up / triangle-down / x, so the shape alone tells native from
+  Hilbert in a legend;
+* **line dash** = domain again: dashed for Hilbert-linearised.
 
 Because color follows the *family* (an entity property) rather than the
 selection order, changing filters never repaints surviving series.
@@ -112,13 +113,24 @@ def parse_scheme(name: str) -> dict:
     return {"family": family, "hilbert": hilbert, "data_dependent": dd, "records": records}
 
 
+#: Marker by (Hilbert?, divider): the shape alone separates native from Hilbert.
+SYMBOLS = {
+    (False, "uniform"): "circle",
+    (False, "cells"): "diamond",
+    (False, "records"): "square",
+    (True, "uniform"): "triangle-up",
+    (True, "cells"): "triangle-down",
+    (True, "records"): "x",
+}
+
+
 def scheme_style(name: str) -> dict:
     """Plotly line/marker style for a scheme, from its taxonomy."""
     t = parse_scheme(name)
     return {
         "color": FAMILY_COLORS[t["family"]],
         "dash": "dash" if t["hilbert"] else "solid",
-        "symbol": ("square" if t["records"] else "diamond") if t["data_dependent"] else "circle",
+        "symbol": SYMBOLS[(t["hilbert"], ("records" if t["records"] else "cells") if t["data_dependent"] else "uniform")],
     }
 
 
@@ -370,13 +382,12 @@ def encoding_legend() -> html.Div:
                     html.Div([html.H5("Hue — scheme family"), *family_rows], className="enc-col"),
                     html.Div(
                         [
+                            html.H5("Marker — domain and divider"),
+                            html.P("native: ● uniform, ◆ data-dependent (cells), ■ data-dependent (records)"),
+                            html.P("Hilbert: ▲ uniform, ▼ data-dependent (cells), ✕ data-dependent (records)"),
                             html.H5("Line — domain"),
                             html.P("── solid: native multi-dimensional"),
                             html.P("╌╌ dashed: Hilbert-linearised"),
-                            html.H5("Marker — index divider"),
-                            html.P("● circle: uniform splits"),
-                            html.P("◆ diamond: data-dependent splits (cells)"),
-                            html.P("■ square: data-dependent splits (records)"),
                         ],
                         className="enc-col",
                     ),
@@ -629,9 +640,9 @@ def explorer_page(data: pd.DataFrame) -> html.Div:
         [
             html.H2("Explorer"),
             html.P(
-                "Pick schemes, a dataset and a metric; then the axis. Hue = family, "
-                "dashed = Hilbert, diamond = data-dependent (full legend on the "
-                "Overview page).",
+                "Pick schemes, a dataset and a metric; then the axis. Hue = family; "
+                "circle/diamond/square = native, triangle/triangle-down/x = Hilbert "
+                "(uniform / cell- / record-balanced); Hilbert also dashed (full legend on the Overview page).",
                 className="lede",
             ),
             html.Div(

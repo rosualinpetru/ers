@@ -221,8 +221,9 @@ raises the recursion limit accordingly.
   synthetic data for the illustrative figures (Hilbert curve, segment merging, the extension sketches).
 * [`scripts/plot_hilbert.py`](scripts/plot_hilbert.py) draws one query's cover on the curve (debugging aid).
 * `python3 -m ers.benchmark.plot.plot_benchmarks benchmarks` serves a four-page Dash site (overview and
-  metric reference, scheme guide, interactive explorer, coverage of loaded reports). Hue = scheme family,
-  dashed = Hilbert, diamond = data-dependent, in both the site and the static figures.
+  metric reference, scheme guide, interactive explorer, coverage of loaded reports). In both the site and the
+  static figures: hue = scheme family; marker = domain and divider (native: circle / diamond / square for
+  uniform / cell-balanced / record-balanced, Hilbert: triangle-up / triangle-down / X); Hilbert lines are also dashed.
 
 * [`scripts/validate_reports.py`](scripts/validate_reports.py) checks every report against its scheme's
   contract (single covers issue one token, exact schemes agree on result counts, the quadtree/Hilbert
