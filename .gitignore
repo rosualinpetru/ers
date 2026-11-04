@@ -56,7 +56,7 @@ cython_debug/
 # is generated from them); superseded reports are not.
 benchmarks/superseded/
 
-# Regenerable figure outputs (committed copies live in docs/img/)
+# Regenerable figure outputs (scripts/gen_*figures.py); only the README illustration is committed, in docs/img/
 figures/
 
 # Lean build artefacts
