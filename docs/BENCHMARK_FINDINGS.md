@@ -125,16 +125,19 @@ vertices (12–32× the domain size vs ≈4× for cells and 3× for uniform).
 **7. Three dimensions amplify everything (nh_64, 2¹⁸ cells).** `linear`
 issues 128,788 tokens per query; `quad_brc` 7,911 (an octree BRC of a box is
 its surface in octants); `range_brc` only 126 but stores 228 MB for 4,096
-points; `quad_src` holds one token at precision 0.53 and `tdag_src` 0.61 for
+points. The Hilbert range tree shows the 2D trade at full scale:
+`range_brc_hilbert` stores 12.6 MB (18× less than the product) and issues
+4,715 tokens (37× more), because a 3D box shatters into about a thousand curve
+segments. `quad_src` holds one token at precision 0.53 and `tdag_src` 0.61 for
 951 MB (`tdag_src_hilbert` 0.55 for 23 MB); the R-trees again land the best
 lossy trade-off (182 / 202 tokens, precision 0.91 / 0.90, 4–5 MB). The
-data-dependent curve quadtree degenerates to 58,946 tokens. One scheme hits a
-wall: `range_brc_hilbert` built its index (12.6 MB) but its segment
-decomposition — the whole *surface* of a 3D box on a 2¹⁸-cell curve, then a
-BRC per segment over a tree of height 18 — did not complete the query phase in
-the time budget. The data-dependent curve TDAG completes only through the
-harness's sequential fallback (its tree is too deep to ship to the process
-pool).
+data-dependent curve trees degenerate to 58,221 and 58,946 tokens. Two of the
+earlier "walls" were implementation artefacts: the curve range tree could not
+answer a 3D query because the range cover expanded vertices disjoint from the
+query (about 350 s per query; 0.3 s after pruning, same cover), and the deep
+data-dependent curve TDAG only runs through the harness's sequential fallback
+(its tree is too deep to ship to the process pool). Every (scheme, dataset)
+cell now has completed query results.
 
 ## Recommendations by goal
 
