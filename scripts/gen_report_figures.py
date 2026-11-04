@@ -30,6 +30,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import openpyxl
+from matplotlib.ticker import LogLocator, NullFormatter, ScalarFormatter
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, REPO_ROOT)
@@ -44,12 +45,12 @@ plt.rcParams.update(
     {
         "figure.dpi": 130,
         "savefig.dpi": 200,
-        "font.size": 9,
-        "axes.titlesize": 9.5,
-        "axes.labelsize": 9,
-        "legend.fontsize": 7.5,
-        "xtick.labelsize": 8,
-        "ytick.labelsize": 8,
+        "font.size": 10,
+        "axes.titlesize": 10.5,
+        "axes.labelsize": 10,
+        "legend.fontsize": 8.5,
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
         "axes.grid": True,
         "grid.color": GRID,
         "grid.linewidth": 0.6,
@@ -60,8 +61,10 @@ plt.rcParams.update(
         "axes.spines.top": False,
         "axes.spines.right": False,
         "legend.frameon": False,
-        "lines.linewidth": 1.6,
-        "lines.markersize": 5,
+        "lines.linewidth": 2.1,
+        "lines.markersize": 7,
+        "lines.markeredgewidth": 0.9,
+        "lines.markeredgecolor": "white",
         "pdf.fonttype": 42,
     }
 )
@@ -120,7 +123,7 @@ def style(scheme: str) -> dict:
         "color": FAMILY_COLORS[t["family"]],
         "linestyle": "--" if t["hilbert"] else "-",
         "marker": MARKERS[(t["hilbert"], divider)],
-        "markersize": 5.5 if t["hilbert"] else 5,
+        "markersize": 8 if t["hilbert"] else 7,
     }
 
 
@@ -193,13 +196,25 @@ def save(fig, out: str, name: str):
     print("  wrote", name)
 
 
+def log_y(ax, dense: bool = False):
+    """Log y-axis with plain-number labels: decades only, or 1-2-5 steps for narrow ranges."""
+    ax.set_yscale("log")
+    ax.yaxis.set_major_locator(LogLocator(base=10, subs=(1.0, 2.0, 5.0) if dense else (1.0,)))
+    fmt = ScalarFormatter()
+    fmt.set_scientific(False)
+    ax.yaxis.set_major_formatter(fmt)
+    ax.yaxis.set_minor_formatter(NullFormatter())
+
+
 def domain_ticks(ax, bits_list: List[int], dims: int):
     ax.set_xticks(bits_list)
     ax.set_xticklabels([f"$2^{{{dims * b}}}$" for b in bits_list])
     ax.set_xlabel("domain size (cells)")
 
 
-def series_vs_domain(ax, R: Reports, schemes: List[str], dataset: str, dims: int, metric: str, scalar: bool = False, label_right: bool = True):
+def series_vs_domain(
+    ax, R: Reports, schemes: List[str], dataset: str, dims: int, metric: str, scalar: bool = False, label_right: bool = True, scale: float = 1.0
+):
     """One line per scheme over domain size; direct label at the right end."""
     handles = []
     ends = []
@@ -209,7 +224,7 @@ def series_vs_domain(ax, R: Reports, schemes: List[str], dataset: str, dims: int
         for b in xs:
             v = R.scalar(s, dataset, dims, b, metric) if scalar else R.mean(s, dataset, dims, b, metric)
             if v is not None:
-                pts.append((b, v))
+                pts.append((b, v * scale))
         if not pts:
             continue
         (h,) = ax.plot([p[0] for p in pts], [p[1] for p in pts], label=PRETTY[s], **style(s))
@@ -217,7 +232,7 @@ def series_vs_domain(ax, R: Reports, schemes: List[str], dataset: str, dims: int
         ends.append((pts[-1][0], pts[-1][1], PRETTY[s], style(s)["color"]))
     if label_right and len(ends) <= 4:
         for x, y, name, c in ends:
-            ax.annotate(name, (x, y), xytext=(4, 0), textcoords="offset points", fontsize=7, color=INK_2, va="center")
+            ax.annotate(name, (x, y), xytext=(5, 0), textcoords="offset points", fontsize=8.5, color=INK_2, va="center")
     return handles
 
 
@@ -244,26 +259,26 @@ def fmt_num(v: Optional[float], digits: int = 0) -> str:
 def fig_exact_tokens_index(R: Reports, out: str):
     """Exact schemes on cali: tokens and index size vs domain (two panels, two charts, one axis each)."""
     schemes = ["linear", "range_brc", "quad_brc", "range_brc_hilbert"]
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(DBL_W, 2.5))
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(DBL_W, 3.0))
     series_vs_domain(a1, R, schemes, "cali", 2, "trapdoor_count")
-    a1.set_yscale("log")
-    a1.set_ylabel("search tokens per query (mean)")
+    log_y(a1)
+    a1.set_ylabel("tokens per query (mean)")
     a1.set_title("Tokens (query leakage)")
     domain_ticks(a1, [5, 6, 7], 2)
-    series_vs_domain(a2, R, schemes, "cali", 2, "index_size", scalar=True)
-    a2.set_yscale("log")
-    a2.set_ylabel("encrypted index size (bytes)")
+    series_vs_domain(a2, R, schemes, "cali", 2, "index_size", scalar=True, scale=1e-6)
+    log_y(a2, dense=True)
+    a2.set_ylabel("index size (MB)")
     a2.set_title("Server storage")
     domain_ticks(a2, [5, 6, 7], 2)
-    a1.legend(loc="upper left")
-    fig.tight_layout()
+    fig.legend(*a1.get_legend_handles_labels(), loc="lower center", ncol=4, bbox_to_anchor=(0.5, -0.04))
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
     save(fig, out, "fig_exact_cali")
 
 
 def fig_lossy_precision_vs_size(R: Reports, out: str):
     """Precision by query-size bucket at cali 2^12: the lossy schemes."""
     schemes = ["quad_src", "tdag_src", "hilbert_rtree", "rtree", "interactive_src_hilbert", "interactive_src"]
-    fig, ax = plt.subplots(figsize=(COL_W, 2.6))
+    fig, ax = plt.subplots(figsize=(COL_W, 3.0))
     for s in schemes:
         vals = R.buckets(s, "cali", 2, 6, "precision")
         if not vals:
@@ -271,7 +286,7 @@ def fig_lossy_precision_vs_size(R: Reports, out: str):
         xs = sorted(vals)
         ax.plot([x + 5 for x in xs], [vals[x] for x in xs], label=PRETTY[s], **style(s))
     ax.set_ylim(0, 1.02)
-    ax.set_xlabel("query size (% of domain area, bucket midpoint)")
+    ax.set_xlabel("query size (% of domain area)")
     ax.set_ylabel("precision")
     ax.set_title("Precision vs query size, cali, domain $2^{12}$")
     fig.legend(*ax.get_legend_handles_labels(), loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.1))
@@ -282,17 +297,17 @@ def fig_lossy_precision_vs_size(R: Reports, out: str):
 def fig_lossy_vs_domain(R: Reports, out: str):
     """Lossy schemes: precision and tokens vs domain on cali."""
     schemes = ["quad_src", "tdag_src", "hilbert_rtree", "rtree", "interactive_src_hilbert", "interactive_src"]
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(DBL_W, 2.5))
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(DBL_W, 3.0))
     series_vs_domain(a1, R, schemes, "cali", 2, "precision", label_right=False)
     a1.set_ylim(0, 1.02)
-    a1.set_ylabel("precision (mean over query sizes)")
+    a1.set_ylabel("precision (mean)")
     a1.set_title("Precision")
     domain_ticks(a1, [5, 6, 7], 2)
     # Single-cover schemes issue exactly one token by construction: not plotted.
     series_vs_domain(a2, R, [s for s in schemes if "src" not in s or "interactive" in s], "cali", 2, "trapdoor_count", label_right=False)
-    a2.set_yscale("log")
-    a2.set_ylabel("search tokens per query (mean)")
-    a2.set_title("Tokens, multi-token schemes (interactive: both rounds)")
+    log_y(a2)
+    a2.set_ylabel("tokens per query (mean)")
+    a2.set_title("Tokens, multi-token schemes")
     domain_ticks(a2, [5, 6, 7], 2)
     fig.legend(*a1.get_legend_handles_labels(), loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.04))
     fig.tight_layout(rect=(0, 0.06, 1, 1))
@@ -306,14 +321,14 @@ def fig_data_dependent(R: Reports, out: str):
         ("range_brc_hilbert", "range_brc_hilbert_data_dependent"),
         ("quad_brc_hilbert", "quad_brc_hilbert_data_dependent"),
     ]
-    fig, axes = plt.subplots(1, 2, figsize=(DBL_W, 2.5), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(DBL_W, 3.0), sharey=True)
     for ax, ds in zip(axes, ["cali", "spitz"]):
         for u, d in pairs:
             series_vs_domain(ax, R, [u, d], ds, 2, "trapdoor_count", label_right=False)
-        ax.set_yscale("log")
+        log_y(ax)
         ax.set_title(ds)
         domain_ticks(ax, [5, 6, 7], 2)
-    axes[0].set_ylabel("search tokens per query (mean)")
+    axes[0].set_ylabel("tokens per query (mean)")
     fig.legend(*axes[0].get_legend_handles_labels(), loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.04))
     fig.tight_layout(rect=(0, 0.06, 1, 1))
     save(fig, out, "fig_data_dependent")
@@ -327,16 +342,16 @@ def fig_index_size_bars(R: Reports, out: str):
         if v is not None:
             rows.append((PRETTY[s], v, style(s)["color"]))
     rows.sort(key=lambda r: r[1])
-    fig, ax = plt.subplots(figsize=(COL_W, 4.2))
+    fig, ax = plt.subplots(figsize=(COL_W, 6.4))
     ys = range(len(rows))
     ax.barh(list(ys), [r[1] for r in rows], color=[r[2] for r in rows], height=0.72)
     ax.set_yticks(list(ys))
-    ax.set_yticklabels([r[0] for r in rows], fontsize=7.5)
+    ax.set_yticklabels([r[0] for r in rows], fontsize=8.5)
     ax.set_xscale("log")
-    ax.set_xlabel("encrypted index size (bytes, log)")
+    ax.set_xlabel("index size (bytes, log)")
     ax.set_title("Index size, cali, domain $2^{12}$")
     for y, r in zip(ys, rows):
-        ax.annotate(fmt_bytes(r[1]).replace("\\,", " "), (r[1], y), xytext=(3, 0), textcoords="offset points", fontsize=6.5, va="center", color=INK_2)
+        ax.annotate(fmt_bytes(r[1]).replace("\\,", " "), (r[1], y), xytext=(3, 0), textcoords="offset points", fontsize=8, va="center", color=INK_2)
     ax.grid(axis="y", visible=False)
     fig.tight_layout()
     save(fig, out, "fig_index_size_cali")
@@ -353,26 +368,26 @@ def fig_nh3d(R: Reports, out: str):
     # Not plotted: single-cover schemes' token count (always 1) and exact schemes' precision (always 1).
     tok_rows = sorted([r for r in rows if r[1] > 1], key=lambda r: r[1])
     prec_rows = sorted([r for r in rows if r[2] is not None and r[2] < 1], key=lambda r: r[2])
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(DBL_W, 3.0), gridspec_kw={"width_ratios": [1.3, 1]})
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(DBL_W, 3.4), gridspec_kw={"width_ratios": [1.3, 1]})
     ys = list(range(len(tok_rows)))
     a1.barh(ys, [r[1] for r in tok_rows], color=[r[4] for r in tok_rows], height=0.72)
     a1.set_yticks(ys)
-    a1.set_yticklabels([r[0] for r in tok_rows], fontsize=7.5)
+    a1.set_yticklabels([r[0] for r in tok_rows], fontsize=8.5)
     a1.set_xscale("log")
-    a1.set_xlabel("search tokens per query (mean, log)")
+    a1.set_xlabel("tokens per query (mean, log)")
     a1.set_title("Tokens, multi-token schemes")
     for y, r in zip(ys, tok_rows):
-        a1.annotate(fmt_num(r[1]), (r[1], y), xytext=(3, 0), textcoords="offset points", fontsize=6.5, va="center", color=INK_2)
+        a1.annotate(fmt_num(r[1]), (r[1], y), xytext=(3, 0), textcoords="offset points", fontsize=8, va="center", color=INK_2)
     a1.grid(axis="y", visible=False)
     ys2 = list(range(len(prec_rows)))
     a2.barh(ys2, [r[2] for r in prec_rows], color=[r[4] for r in prec_rows], height=0.72)
     a2.set_yticks(ys2)
-    a2.set_yticklabels([r[0] for r in prec_rows], fontsize=7.5)
+    a2.set_yticklabels([r[0] for r in prec_rows], fontsize=8.5)
     a2.set_xlim(0, 1.05)
     a2.set_xlabel("precision (mean)")
     a2.set_title("Precision, lossy schemes")
     for y, r in zip(ys2, prec_rows):
-        a2.annotate(f"{r[2]:.2f}", (r[2], y), xytext=(3, 0), textcoords="offset points", fontsize=6.5, va="center", color=INK_2)
+        a2.annotate(f"{r[2]:.2f}", (r[2], y), xytext=(3, 0), textcoords="offset points", fontsize=8, va="center", color=INK_2)
     a2.grid(axis="y", visible=False)
     fig.tight_layout()
     save(fig, out, "fig_nh64")
@@ -380,7 +395,7 @@ def fig_nh3d(R: Reports, out: str):
 
 def fig_interactive_rounds(R: Reports, out: str):
     """Token split per round for the two interactive variants, cali and spitz."""
-    fig, axes = plt.subplots(1, 2, figsize=(DBL_W, 2.4), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(DBL_W, 2.9), sharey=True)
     for ax, ds in zip(axes, ["cali", "spitz"]):
         labels, r1, r2, cols = [], [], [], []
         for s in ["interactive_src", "interactive_src_hilbert"]:
@@ -393,12 +408,12 @@ def fig_interactive_rounds(R: Reports, out: str):
         ax.bar(xs, r1, color=INK_MUTED, width=0.7, label="round 1 (metadata)")
         ax.bar(xs, r2, bottom=r1, color=cols, width=0.7, label="round 2 (documents)", edgecolor="white", linewidth=1)
         ax.set_xticks(list(xs))
-        ax.set_xticklabels(labels, fontsize=7)
+        ax.set_xticklabels(labels, fontsize=8.5)
         ax.set_title(ds)
         for x, a, b2 in zip(xs, r1, r2):
-            ax.annotate(f"{a + b2:.0f}", (x, a + b2), xytext=(0, 2), textcoords="offset points", ha="center", fontsize=7, color=INK_2)
+            ax.annotate(f"{a + b2:.0f}", (x, a + b2), xytext=(0, 3), textcoords="offset points", ha="center", fontsize=8.5, color=INK_2)
         ax.grid(axis="x", visible=False)
-    axes[0].set_ylabel("search tokens per query (mean)")
+    axes[0].set_ylabel("tokens per query (mean)")
     fig.legend(*axes[0].get_legend_handles_labels(), loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.06))
     fig.tight_layout(rect=(0, 0.06, 1, 1))
     save(fig, out, "fig_interactive_rounds")
@@ -407,7 +422,7 @@ def fig_interactive_rounds(R: Reports, out: str):
 def fig_precision_datasets(R: Reports, out: str):
     """Small multiples: precision vs domain for the lossy schemes on three datasets."""
     schemes = ["quad_src", "tdag_src", "tdag_src_hilbert", "hilbert_rtree", "rtree", "interactive_src_hilbert"]
-    fig, axes = plt.subplots(1, 3, figsize=(DBL_W, 2.4), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(DBL_W, 2.9), sharey=True)
     for ax, (ds, bl) in zip(axes, [("dense_2d", [3, 4, 5]), ("cali", [5, 6, 7]), ("spitz", [5, 6, 7])]):
         series_vs_domain(ax, R, schemes, ds, 2, "precision", label_right=False)
         ax.set_ylim(0, 1.02)
@@ -429,11 +444,11 @@ def fig_mass_weighting(R: Reports, out: str):
         ("quad_src", "quad_src_data_dependent", "quad_src_data_dependent_records"),
         ("tdag_src", "tdag_src_data_dependent", "tdag_src_data_dependent_records"),
     ]
-    fig, axes = plt.subplots(1, 2, figsize=(DBL_W, 2.5))
+    fig, axes = plt.subplots(1, 2, figsize=(DBL_W, 3.0))
     for triple in brc:
         series_vs_domain(axes[0], R, list(triple), "spitz", 2, "trapdoor_count", label_right=False)
-    axes[0].set_yscale("log")
-    axes[0].set_ylabel("search tokens per query (mean)")
+    log_y(axes[0], dense=True)
+    axes[0].set_ylabel("tokens per query (mean)")
     axes[0].set_title("BRC schemes, spitz: tokens")
     domain_ticks(axes[0], [5, 6, 7], 2)
     for triple in src:
@@ -444,7 +459,7 @@ def fig_mass_weighting(R: Reports, out: str):
     domain_ticks(axes[1], [5, 6, 7], 2)
     h0, l0 = axes[0].get_legend_handles_labels()
     h1, l1 = axes[1].get_legend_handles_labels()
-    fig.legend(h0 + h1, l0 + l1, loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.08), fontsize=6.5)
+    fig.legend(h0 + h1, l0 + l1, loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.08), fontsize=8)
     fig.tight_layout(rect=(0, 0.08, 1, 1))
     save(fig, out, "fig_mass_weighting")
 
