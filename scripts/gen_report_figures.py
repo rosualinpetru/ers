@@ -334,33 +334,75 @@ def fig_data_dependent(R: Reports, out: str):
     save(fig, out, "fig_data_dependent")
 
 
+#: One representative scheme per distinct encrypted index. BRC and SRC share
+#: the structure (hence the index), the quadtree is the same on the grid and on
+#: the curve, and so is the linear index.
+STRUCTURES = [
+    ("linear", "Linear (= Linear-H)"),
+    ("range_brc", "Range product"),
+    ("range_brc_data_dependent", "Range product-DD"),
+    ("range_brc_data_dependent_records", "Range product-DDr"),
+    ("range_brc_hilbert", "Range tree-H"),
+    ("range_brc_hilbert_data_dependent", "Range tree-H-DD"),
+    ("range_brc_hilbert_data_dependent_records", "Range tree-H-DDr"),
+    ("tdag_src", "TDAG product"),
+    ("tdag_src_data_dependent", "TDAG product-DD"),
+    ("tdag_src_data_dependent_records", "TDAG product-DDr"),
+    ("tdag_src_hilbert", "TDAG-H"),
+    ("tdag_src_hilbert_data_dependent", "TDAG-H-DD"),
+    ("tdag_src_hilbert_data_dependent_records", "TDAG-H-DDr"),
+    ("quad_brc", "Quadtree (= -H)"),
+    ("quad_brc_data_dependent", "Quadtree-DD"),
+    ("quad_brc_data_dependent_records", "Quadtree-DDr"),
+    ("quad_brc_hilbert_data_dependent", "Quadtree-H-DD"),
+    ("quad_brc_hilbert_data_dependent_records", "Quadtree-H-DDr"),
+    ("rtree", "R-tree (STR)"),
+    ("hilbert_rtree", "Hilbert R-tree"),
+    ("interactive_src", "Interactive (2 indices)"),
+    ("interactive_src_hilbert", "Interactive-H (2 indices)"),
+]
+
+
 def fig_index_size_bars(R: Reports, out: str):
-    """Ranked horizontal bars: index size of every scheme at cali 2^12."""
+    """Ranked horizontal bars: index size of every distinct structure at cali 2^12."""
     rows = []
-    for s in PRETTY:
+    for s, label in STRUCTURES:
         v = R.scalar(s, "cali", 2, 6, "index_size")
         if v is not None:
-            rows.append((PRETTY[s], v, style(s)["color"]))
+            rows.append((label, v, style(s)["color"]))
     rows.sort(key=lambda r: r[1])
-    fig, ax = plt.subplots(figsize=(COL_W, 6.4))
+    fig, ax = plt.subplots(figsize=(COL_W, 5.0))
     ys = range(len(rows))
-    ax.barh(list(ys), [r[1] for r in rows], color=[r[2] for r in rows], height=0.72)
+    ax.barh(list(ys), [r[1] / 1e6 for r in rows], color=[r[2] for r in rows], height=0.72)
     ax.set_yticks(list(ys))
     ax.set_yticklabels([r[0] for r in rows], fontsize=8.5)
     ax.set_xscale("log")
-    ax.set_xlabel("index size (bytes, log)")
-    ax.set_title("Index size, cali, domain $2^{12}$")
+    ax.xaxis.set_major_locator(LogLocator(base=10, subs=(1.0,)))
+    fmt = ScalarFormatter()
+    fmt.set_scientific(False)
+    ax.xaxis.set_major_formatter(fmt)
+    ax.xaxis.set_minor_formatter(NullFormatter())
+    ax.set_xlabel("index size (MB, log)")
+    ax.set_title("Index size per structure, cali, domain $2^{12}$")
     for y, r in zip(ys, rows):
-        ax.annotate(fmt_bytes(r[1]).replace("\\,", " "), (r[1], y), xytext=(3, 0), textcoords="offset points", fontsize=8, va="center", color=INK_2)
+        ax.annotate(fmt_bytes(r[1]).replace("\\,", " "), (r[1] / 1e6, y), xytext=(3, 0), textcoords="offset points", fontsize=8, va="center", color=INK_2)
     ax.grid(axis="y", visible=False)
     fig.tight_layout()
     save(fig, out, "fig_index_size_cali")
+
+
+#: On nh_64 every occupied cell holds one record, so record weighting is the
+#: cell weighting; the curve quadtree and the curve linear scheme are the native
+#: ones by construction. None of these adds a row.
+NH_DUPLICATES = {"linear_hilbert", "quad_brc_hilbert", "quad_src_hilbert"} | {s for s in PRETTY if s.endswith("_records")}
 
 
 def fig_nh3d(R: Reports, out: str):
     """3D (nh_64): tokens and precision per scheme, ranked bars."""
     rows = []
     for s in PRETTY:
+        if s in NH_DUPLICATES:
+            continue
         tok = R.mean(s, "nh_64", 3, 6, "trapdoor_count")
         if tok is None:
             continue
@@ -464,7 +506,7 @@ def fig_mass_weighting(R: Reports, out: str):
 def table_weighting(R: Reports, out: str):
     """Uniform vs cell-weighted vs record-weighted dividers, every dataset at its largest 2D domain and 3D."""
     bases = ["range_brc", "quad_brc", "range_brc_hilbert", "quad_brc_hilbert", "quad_src", "tdag_src", "quad_src_hilbert", "tdag_src_hilbert"]
-    configs = [("cali", 2, 7), ("spitz", 2, 7), ("nh_64", 3, 6)]
+    configs = [("cali", 2, 7), ("spitz", 2, 7)]
     lines = ["\\begin{tabular}{l " + " ".join("rrr" for _ in configs) + "}", "\\toprule"]
     lines.append(" & " + " & ".join(f"\\multicolumn{{3}}{{c}}{{{d.replace('_', chr(92) + '_')} $2^{{{dims * b}}}$}}" for d, dims, b in configs) + " \\\\")
     lines.append("".join(f"\\cmidrule(lr){{{2 + 3 * i}-{4 + 3 * i}}}" for i in range(len(configs))))
@@ -494,10 +536,8 @@ def table_main(R: Reports, out: str):
         "range_brc",
         "quad_brc",
         "range_brc_hilbert",
-        "quad_brc_hilbert",
         "quad_src",
         "tdag_src",
-        "quad_src_hilbert",
         "tdag_src_hilbert",
         "range_brc_data_dependent",
         "range_brc_hilbert_data_dependent",
@@ -549,6 +589,8 @@ def table_nh(R: Reports, out: str):
     lines = ["\\begin{tabular}{l r r r}", "\\toprule", "scheme & tokens / query & precision & index \\\\", "\\midrule"]
     rows = []
     for s in PRETTY:
+        if s in NH_DUPLICATES:
+            continue
         tok = R.mean(s, "nh_64", 3, 6, "trapdoor_count")
         idx = R.scalar(s, "nh_64", 3, 6, "index_size")
         if tok is None and idx is None:
