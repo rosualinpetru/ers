@@ -410,7 +410,7 @@ def fig_nh3d(R: Reports, out: str):
     # Not plotted: single-cover schemes' token count (always 1) and exact schemes' precision (always 1).
     tok_rows = sorted([r for r in rows if r[1] > 1], key=lambda r: r[1])
     prec_rows = sorted([r for r in rows if r[2] is not None and r[2] < 1], key=lambda r: r[2])
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(DBL_W, 3.4), gridspec_kw={"width_ratios": [1.3, 1]})
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(COL_W, 5.4), gridspec_kw={"height_ratios": [len(tok_rows), len(prec_rows)]})
     ys = list(range(len(tok_rows)))
     a1.barh(ys, [r[1] for r in tok_rows], color=[r[4] for r in tok_rows], height=0.72)
     a1.set_yticks(ys)
