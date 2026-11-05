@@ -216,6 +216,11 @@ raises the recursion limit accordingly.
 
 * [`scripts/gen_report_figures.py`](scripts/gen_report_figures.py) reads `benchmarks/` and writes every
   figure and LaTeX table of the paper's evaluation (PDF + PNG + `summary.csv`) to `figures/report/`.
+* [`scripts/gen_concept_figures.py`](scripts/gen_concept_figures.py) draws the paper's explanatory
+  figures as TikZ (`figures/concept/*.tex`) by running the library's own structures: one query box on the
+  grid and on the curve with both covers, the canonical ranges of the curve range tree, the leaves of the
+  Hilbert- and STR-packed R-trees over one point set, uniform versus mass-based TDAG cuts, and the two
+  rounds of the interactive index. Run it with `PYTHONPATH=. python3 scripts/gen_concept_figures.py`.
 * [`scripts/gen_figures.py`](scripts/gen_figures.py) and
   [`scripts/gen_future_figures.py`](scripts/gen_future_figures.py) run the schemes directly on small
   synthetic data for the illustrative figures (Hilbert curve, segment merging, the extension sketches).
@@ -239,6 +244,7 @@ A written summary of what the benchmarks show is in
 for ds in dense_2d cali spitz nh; do QUERIES_COUNT=20 scripts/run_all.sh $ds; done   # hours
 python3 scripts/validate_reports.py --replay dense_2d 4 --replay cali 5
 python3 scripts/gen_report_figures.py --out figures/report
+PYTHONPATH=. python3 scripts/gen_concept_figures.py --out figures/concept
 ```
 
 The committed reports were produced with 20 queries per (dataset, domain) at domains `2^6`–`2^10`

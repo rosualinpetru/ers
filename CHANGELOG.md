@@ -103,6 +103,10 @@ All notable changes to this project are documented here.
 - `scripts/gen_report_figures.py` — every figure and table of the paper's
   evaluation, generated from the `.xlsx` reports (PDF + PNG + LaTeX tables +
   a flat `summary.csv`), with the same visual encoding as the report site.
+- `scripts/gen_concept_figures.py` — the paper's explanatory figures (domain
+  representations and covers of one query, curve-tree canonical ranges, packed
+  R-tree leaves, uniform versus mass-based TDAG cuts, the interactive
+  protocol) emitted as TikZ from the library's own structures.
 - `pyproject.toml` now declares the package (`pip install -e ".[dev]"`).
 - Tests: `tests/test_registry.py` runs every CLI-registered scheme end-to-end
   (no false negatives, declared exactness, single-token SRC, 3D NH integer
